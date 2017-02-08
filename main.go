@@ -1,12 +1,12 @@
 package main
 
 import (
-	"gitlab.alibaba-inc.com/cos/fluentd-pilot/pilot"
 	"flag"
 	"path/filepath"
 	"io/ioutil"
 	log "github.com/sirupsen/logrus"
 	"os"
+	"github.com/jzwlqx/fluent-pilot/pilot"
 )
 
 func main() {
