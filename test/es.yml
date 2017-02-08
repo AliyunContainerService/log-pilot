@@ -1,0 +1,31 @@
+version: '2'
+services:
+  elasticsearch:
+    ports:
+        - 9200:9200
+    image: elasticsearch
+
+  kibana:
+    image: kibana
+    ports:
+        - 5601:5601
+    environment:
+      ELASTICSEARCH_URL: http://elasticsearch:9200/
+    labels:
+      aliyun.routing.port_5601: kibana
+    links:
+      - elasticsearch
+
+        #  pilot:
+        #    image: pilot
+        #    volumes:
+        #      - /var/run/docker.sock:/var/run/docker.sock
+        #      - /:/host
+        #    environment:
+        #      FLUENTD_OUTPUT: elasticsearch
+        #      ELASTICSEARCH_HOST: elasticsearch
+        #      ELASTICSEARCH_PORT: 9200
+        #    links:
+        #      - elasticsearch
+        #
+

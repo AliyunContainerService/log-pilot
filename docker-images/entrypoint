@@ -1,0 +1,22 @@
+#!/bin/sh
+
+set -x
+cd $(dirname $0)
+config=config.default
+if [ -f "config.custom" ]; then
+    config=config.custom
+fi
+
+chmod +x $config
+lsof
+fuser $config
+
+if ! ./$config; then
+    echo "failed generate config with $config"
+    exit 1
+fi
+
+#/usr/bin/fluentd -c /etc/fluentd/fluentd.conf -d /var/run/fluentd.pid --log /var/log/fluentd.log
+#/usr/bin/fluentd -c /etc/fluentd/fluentd.conf -d /var/run/fluentd.pid 
+/pilot/pilot -base /host -template /pilot/fluentd.tpl -log-level debug
+

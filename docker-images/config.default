@@ -1,0 +1,62 @@
+#!/bin/sh
+
+set -e
+cd $(dirname $0)
+
+assert_not_empty(){
+    arg=$1
+    shift
+    if [ -z "$arg" ]; then
+        echo "$@"
+        exit 1
+    fi
+}
+
+es(){
+assert_not_empty "$ELASTICSEARCH_HOST" "ELASTICSEARCH_HOST required"
+assert_not_empty "$ELASTICSEARCH_PORT" "ELASTICSEARCH_PORT required"
+
+cat >> /etc/fluentd/fluentd.conf << EOF
+<match **>
+@type elasticsearch
+hosts $ELASTICSEARCH_HOST:$ELASTICSEARCH_PORT
+reconnect_on_error true
+target_index_key target
+index_name _default_index
+flush_interval 5
+type_name fluentd
+</match>
+EOF
+}
+
+default(){
+echo "use default output"
+cat >> /etc/fluentd/fluentd.conf << EOF
+<match **>
+@type stdout
+</match>
+EOF
+}
+
+graylog(){
+assert_not_empty "$GRAYLOG_HOST" "GRAYLOG_HOST required"
+assert_not_empty "$GRAYLOG_PORT" "GRAYLOG_PORT required"
+cat >> /etc/fluentd/fluentd.conf << EOF
+<match **>
+type gelf
+host $GRAYLOG_HOST
+port $GRAYLOG_PORT
+flush_interval 3s
+</match>
+EOF
+}
+
+case "$FLUENTD_OUTPUT" in
+    elasticsearch)
+        es;;
+    graylog)
+        graylog;;
+    *)
+        default
+esac
+

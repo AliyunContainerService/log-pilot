@@ -1,2 +1,15 @@
-# fluent-pilot
-Collect logs in docker containers
+Build
+=====
+
+```
+cd images
+./build.sh
+```
+
+Run
+===
+
+```
+docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock -v /:/host  -e FLUENTD_OUTPUT=elasticsearch -e ELASTICSEARCH_HOST=127.0.0.1 -e ELASTICSEARCH_PORT=9200 --net host pilot
+```
+
