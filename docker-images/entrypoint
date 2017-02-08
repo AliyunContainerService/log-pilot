@@ -8,8 +8,6 @@ if [ -f "config.custom" ]; then
 fi
 
 chmod +x $config
-lsof
-fuser $config
 
 if ! ./$config; then
     echo "failed generate config with $config"
