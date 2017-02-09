@@ -1,11 +1,11 @@
 package pilot
 
 import (
+	"fmt"
+	log "github.com/sirupsen/logrus"
 	"os"
 	"os/exec"
-	"fmt"
 	"syscall"
-	log "github.com/sirupsen/logrus"
 )
 
 var fluentd *exec.Cmd

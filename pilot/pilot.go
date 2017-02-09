@@ -181,15 +181,19 @@ func (p *Pilot) newContainer(containerJSON types.ContainerJSON) error {
 
 	source := Source{
 		Application: labels[LABEL_PROJECT],
-		Service: labels[LABEL_SERVICE],
-		Container: strings.TrimPrefix(containerJSON.Name, "/"),
+		Service:     labels[LABEL_SERVICE],
+		Container:   strings.TrimPrefix(containerJSON.Name, "/"),
 	}
 
-	logConfigs := p.getLogConfigs(jsonLogPath, mounts, labels)
+	logConfigs, err := p.getLogConfigs(jsonLogPath, mounts, labels)
+	if err != nil {
+		return err
+	}
+
 	if len(logConfigs) == 0 {
+		log.Debugf("%s has not log config, skip", id)
 		return nil
 	}
-
 
 	//pilot.findMounts(logConfigs, jsonLogPath, mounts)
 	//生成配置
@@ -234,9 +238,9 @@ func (p *Pilot) processEvent(msg events.Message) error {
 	ctx := context.Background()
 	switch msg.Action {
 	case "start":
-		log.Debug("Process container start event: %s", containerId)
+		log.Debugf("Process container start event: %s", containerId)
 		if p.exists(containerId) {
-			log.Debug("%s is already exists.", containerId)
+			log.Debugf("%s is already exists.", containerId)
 			return nil
 		}
 		containerJSON, err := p.client().ContainerInspect(ctx, containerId)
@@ -245,7 +249,7 @@ func (p *Pilot) processEvent(msg events.Message) error {
 		}
 		return p.newContainer(containerJSON)
 	case "destroy":
-		log.Debug("Process container destory event: %s", containerId)
+		log.Debugf("Process container destory event: %s", containerId)
 		p.delContainer(containerId)
 	}
 	return nil
@@ -294,16 +298,16 @@ func (p *Pilot) parseLogConfig(prefix string, jsonLogPath string, mounts map[str
 		return nil, fmt.Errorf("label %s is empty or not exist.", prefix)
 	}
 
-	format := labels[prefix + ".format"]
+	format := labels[prefix+".format"]
 	if format == "" {
 		format = "none"
 	}
 
-	tags := labels[prefix + ".tags"]
+	tags := labels[prefix+".tags"]
 	tagMap, err := p.parseTags(tags)
 
 	if err != nil {
-		return nil, fmt.Errorf("parse tags in %s error: %v", prefix + ".tags", err)
+		return nil, fmt.Errorf("parse tags in %s error: %v", prefix+".tags", err)
 	}
 
 	if path == "stdout" {
@@ -340,7 +344,7 @@ func (p *Pilot) parseLogConfig(prefix string, jsonLogPath string, mounts map[str
 	}, nil
 }
 
-func (p *Pilot) getLogConfigs(jsonLogPath string, mounts []types.MountPoint, labels map[string]string) []LogConfig {
+func (p *Pilot) getLogConfigs(jsonLogPath string, mounts []types.MountPoint, labels map[string]string) ([]LogConfig, error) {
 	var ret []LogConfig
 
 	mountsMap := make(map[string]types.MountPoint)
@@ -352,14 +356,13 @@ func (p *Pilot) getLogConfigs(jsonLogPath string, mounts []types.MountPoint, lab
 		if strings.HasPrefix(k, LABEL_SERVICE_LOGS) && strings.Count(k, ".") == 2 {
 			config, err := p.parseLogConfig(k, jsonLogPath, mountsMap, labels)
 			if err != nil {
-				log.Warnf("Parse log config error: %v", err)
-				continue
+				return nil, err
 			}
 
 			ret = append(ret, *config)
 		}
 	}
-	return ret
+	return ret, nil
 }
 
 func (p *Pilot) exists(containId string) bool {
@@ -376,7 +379,7 @@ func (p *Pilot) render(containerId string, source Source, configList []LogConfig
 	context := map[string]interface{}{
 		"containerId": containerId,
 		"configList":  configList,
-		"source": source,
+		"source":      source,
 	}
 	if err := p.tpl.Execute(&buf, context); err != nil {
 		return "", err

@@ -6,8 +6,12 @@
   format {{ .Format }}
   pos_file /pilot/pos/fluentd.pos
   refresh_interval 5
-  keep_time_key
 </source>
+
+<filter {{ $.containerId }}.{{ .Name }}>
+@type add_time
+time_key @timestamp
+</filter>
 
 <filter {{ $.containerId }}.{{ .Name }}>
 @type record_transformer

@@ -23,7 +23,7 @@ hosts $ELASTICSEARCH_HOST:$ELASTICSEARCH_PORT
 reconnect_on_error true
 target_index_key target
 index_name _default_index
-flush_interval 5
+flush_interval 3
 type_name fluentd
 </match>
 EOF

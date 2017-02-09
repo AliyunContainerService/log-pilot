@@ -1,6 +1,5 @@
 #!/bin/sh
 
-set -x
 cd $(dirname $0)
 config=config.default
 if [ -f "config.custom" ]; then
@@ -9,7 +8,7 @@ fi
 
 chmod +x $config
 
-if ! ./$config; then
+if ! sh $config; then
     echo "failed generate config with $config"
     exit 1
 fi
