@@ -4,14 +4,10 @@
   tag {{ $.containerId }}.{{ .Name }}
   path {{ .HostDir }}/{{ .File }}
   format {{ .Format }}
+  {{if .TimeFormat}} time_format {{ .TimeFormat }}  {{end}}
   pos_file /pilot/pos/fluentd.pos
   refresh_interval 5
 </source>
-
-<filter {{ $.containerId }}.{{ .Name }}>
-@type add_time
-time_key @timestamp
-</filter>
 
 <filter {{ $.containerId }}.{{ .Name }}>
 @type record_transformer

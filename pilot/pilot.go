@@ -104,6 +104,7 @@ type LogConfig struct {
 	HostDir      string
 	ContainerDir string
 	Format       string
+	TimeFormat   string
 	File         string
 	Tags         map[string]string
 }
@@ -315,6 +316,7 @@ func (p *Pilot) parseLogConfig(prefix string, jsonLogPath string, mounts map[str
 			Name:    strings.Split(prefix, ".")[2],
 			HostDir: filepath.Join(p.base, filepath.Dir(jsonLogPath)),
 			Format:  "json",
+			TimeFormat: "%Y-%m-%dT%H:%M:%S.%NZ",
 			File:    filepath.Base(jsonLogPath),
 			Tags:    tagMap,
 		}, nil
