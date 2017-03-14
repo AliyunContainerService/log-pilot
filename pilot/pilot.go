@@ -3,20 +3,20 @@ package pilot
 import (
 	"bytes"
 	"fmt"
+	log "github.com/Sirupsen/logrus"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/events"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
-	log "github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
 	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"sync"
 	"text/template"
-	"sort"
 )
 
 /**
@@ -263,7 +263,7 @@ func (p *Pilot) hostDirOf(path string, mounts map[string]types.MountPoint) strin
 			return point.Source
 		}
 		path = filepath.Dir(path)
-		if path == "/" || path == "."{
+		if path == "/" || path == "." {
 			break
 		}
 	}
@@ -307,12 +307,12 @@ func (p *Pilot) parseLogConfig(name string, info *LogInfoNode, jsonLogPath strin
 
 	if path == "stdout" {
 		return &LogConfig{
-			Name:    name,
-			HostDir: filepath.Join(p.base, filepath.Dir(jsonLogPath)),
-			Format:  "json",
-			File:    filepath.Base(jsonLogPath),
-			Tags:    tagMap,
-			FormatConfig: map[string]string{"time_format":"%Y-%m-%dT%H:%M:%S.%NZ"},
+			Name:         name,
+			HostDir:      filepath.Join(p.base, filepath.Dir(jsonLogPath)),
+			Format:       "json",
+			File:         filepath.Base(jsonLogPath),
+			Tags:         tagMap,
+			FormatConfig: map[string]string{"time_format": "%Y-%m-%dT%H:%M:%S.%NZ"},
 		}, nil
 	}
 
@@ -364,7 +364,7 @@ type LogInfoNode struct {
 
 func newLogInfoNode(value string) *LogInfoNode {
 	return &LogInfoNode{
-		value: value,
+		value:    value,
 		children: make(map[string]*LogInfoNode),
 	}
 }

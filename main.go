@@ -2,11 +2,11 @@ package main
 
 import (
 	"flag"
-	"path/filepath"
-	"io/ioutil"
-	log "github.com/sirupsen/logrus"
-	"os"
+	log "github.com/Sirupsen/logrus"
 	"github.com/jzwlqx/fluentd-pilot/pilot"
+	"io/ioutil"
+	"os"
+	"path/filepath"
 )
 
 func main() {
@@ -25,7 +25,7 @@ func main() {
 		baseDir = ""
 	}
 
-	if *template ==  "" {
+	if *template == "" {
 		panic("template file can not be emtpy")
 	}
 
@@ -37,7 +37,7 @@ func main() {
 	log.SetLevel(logLevel)
 
 	b, err := ioutil.ReadFile(*template)
-	if err!= nil {
+	if err != nil {
 		panic(err)
 	}
 
