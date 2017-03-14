@@ -1,12 +1,12 @@
 fluentd-pilot
 =============
 
-fluentd-pilot是一个自动Docker容器日志的工具。只需要在机器上部署一个fluentd-pilot实例，就可以收集本机所有Docker容器日志。
+`fluentd-pilot` is an awesome docker log tool. With `fluentd-pilot` you can collect logs from docker hosts and send them to your centralize log system such as elastichsearch, graylog2, awsog and etc. `fluentd-pilot` can collect not only docker stdout but also log file that inside docker containers.
 
 QuickStart
 ==========
 
-启动pilot
+### Run pilot
 
 ```
 docker run --rm -it \
@@ -15,7 +15,9 @@ docker run --rm -it \
     registry.cn-hangzhou.aliyuncs.com/acs-sample/fluentd-pilot:latest
 ```
 
-新开一个终端，运行一个要收集日志的应用，比如tomcat
+### Run applications whose logs need to be collected
+
+Open a new terminal, run the application. With tomcat for example:
 
 ```
 docker run -it --rm  -p 10080:8080 \
@@ -25,18 +27,19 @@ docker run -it --rm  -p 10080:8080 \
     tomcat
 ```
 
-观察pilot的输出，可以看到tomcat所有的日志。
+Now watch the output of fluentd-pilot. You will find that fluentd-pilot get all tomcat's startup logs. If you access tomcat with your broswer, access logs in `/usr/local/tomcat/logs/localhost_access_log.\*.txt` will also be displayed in fluentd-pilot's output.
 
-特性
-====
-
-- 一个单独fluentd进程，收集机器上所有容器的日志。不需要为每个容器启动一个fluentd进程
-- 支持文件日志和stdout。docker log dirver亦或logspout只能处理stdout，fluentd-pilot不光支持收集stdout日志，还可以收集文件日志。
-- 声明式配置。当你的容器有日志要收集，只要通过label声明要收集的日志文件的路径，无需改动其他任何配置，fluentd-pilot就会自动收集新容器的日志。
-- 支持多种日志存储方式。无论是强大的阿里云日志服务，还是比较流行的elasticsearch组合，甚至是graylog，fluentd-pilot都能把日志投递到正确的地点。
-- 支持tag。你可以在容器配置上增加一些tag，以便于过滤此容器的日志
-
-参与开发
+Featured
 ========
 
-欢迎提issue和pr
+- Single fluentd process per docker host. You don't need to create new fluentd process for every docker container.
+- Support both stdout and file. Either Docker log driver or logspout can only collect stdout.
+- Declarative configuration. You need do nothing but declare the logs you want to collect.
+- Support many log management: elastichsearch, graylog2, awslogs and more.
+- Tags. You could add tags on the logs collected, and later filter by tags in log management.
+
+Contribute
+==========
+
+You are welcome to make new issues and pull reuqests.
+
