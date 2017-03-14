@@ -54,7 +54,7 @@ The command above runs tomcat container, expect that fluentd-pilot collect stdou
 
 ### More
 
-There are many that you can use to describe the log info. 
+There are many labels you can use to describe the log info. 
 
 - `aliyun.logs.$name=$path`
     - Name is an identify, can be any string you want. The valid characters in name are `0-9a-zA-Z_-`
