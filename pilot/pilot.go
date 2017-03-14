@@ -16,6 +16,7 @@ import (
 	"strings"
 	"sync"
 	"text/template"
+	"sort"
 )
 
 /**
@@ -104,7 +105,7 @@ type LogConfig struct {
 	HostDir      string
 	ContainerDir string
 	Format       string
-	TimeFormat   string
+	FormatConfig map[string]string
 	File         string
 	Tags         map[string]string
 }
@@ -261,8 +262,8 @@ func (p *Pilot) hostDirOf(path string, mounts map[string]types.MountPoint) strin
 		if point, ok := mounts[path]; ok {
 			return point.Source
 		}
-		path = filepath.Base(path)
-		if path == "/" {
+		path = filepath.Dir(path)
+		if path == "/" || path == "."{
 			break
 		}
 	}
@@ -289,80 +290,142 @@ func (p *Pilot) parseTags(tags string) (map[string]string, error) {
 		tagMap[key] = value
 	}
 	return tagMap, nil
-
 }
 
-func (p *Pilot) parseLogConfig(prefix string, jsonLogPath string, mounts map[string]types.MountPoint, labels map[string]string) (*LogConfig, error) {
-	path := labels[prefix]
-
+func (p *Pilot) parseLogConfig(name string, info *LogInfoNode, jsonLogPath string, mounts map[string]types.MountPoint) (*LogConfig, error) {
+	path := info.value
 	if path == "" {
-		return nil, fmt.Errorf("label %s is empty or not exist.", prefix)
+		return nil, fmt.Errorf("path for %s is empty", name)
 	}
 
-	format := labels[prefix+".format"]
-	if format == "" {
-		format = "none"
-	}
-
-	tags := labels[prefix+".tags"]
+	tags := info.get("tags")
 	tagMap, err := p.parseTags(tags)
 
 	if err != nil {
-		return nil, fmt.Errorf("parse tags in %s error: %v", prefix+".tags", err)
+		return nil, fmt.Errorf("parse tags for %s error: %v", name, err)
 	}
 
 	if path == "stdout" {
 		return &LogConfig{
-			Name:    strings.Split(prefix, ".")[2],
+			Name:    name,
 			HostDir: filepath.Join(p.base, filepath.Dir(jsonLogPath)),
 			Format:  "json",
-			TimeFormat: "%Y-%m-%dT%H:%M:%S.%NZ",
 			File:    filepath.Base(jsonLogPath),
 			Tags:    tagMap,
+			FormatConfig: map[string]string{"time_format":"%Y-%m-%dT%H:%M:%S.%NZ"},
 		}, nil
 	}
 
 	if !filepath.IsAbs(path) {
-		return nil, fmt.Errorf("%s must be absolute path, in label %s", path, prefix)
+		return nil, fmt.Errorf("%s must be absolute path, for %s", path, name)
 	}
 	containerDir := filepath.Dir(path)
 	file := filepath.Base(path)
 	if file == "" {
-		return nil, fmt.Errorf("%s must be a file path, not directory, in label %s", path, prefix)
+		return nil, fmt.Errorf("%s must be a file path, not directory, for %s", path, name)
 	}
 
 	hostDir := p.hostDirOf(containerDir, mounts)
 	if hostDir == "" {
-		return nil, fmt.Errorf("%s is not mount on host, in label %s", path, prefix)
+		return nil, fmt.Errorf("in log %s: %s is not mount on host", name, path)
+	}
+
+	format := info.children["format"]
+	if format == nil {
+		format = newLogInfoNode("none")
+	}
+
+	formatConfig, err := Convert(format)
+	if err != nil {
+		return nil, fmt.Errorf("in log %s: format error: %v", name, err)
+	}
+
+	//特殊处理regex
+	if format.value == "regexp" {
+		format.value = fmt.Sprintf("/%s/", formatConfig["pattern"])
+		delete(formatConfig, "pattern")
 	}
 
 	return &LogConfig{
-		Name:         strings.Split(prefix, ".")[2],
+		Name:         name,
 		ContainerDir: containerDir,
-		Format:       format,
+		Format:       format.value,
 		File:         file,
 		Tags:         tagMap,
 		HostDir:      filepath.Join(p.base, hostDir),
+		FormatConfig: formatConfig,
 	}, nil
 }
 
-func (p *Pilot) getLogConfigs(jsonLogPath string, mounts []types.MountPoint, labels map[string]string) ([]LogConfig, error) {
-	var ret []LogConfig
+type LogInfoNode struct {
+	value    string
+	children map[string]*LogInfoNode
+}
+
+func newLogInfoNode(value string) *LogInfoNode {
+	return &LogInfoNode{
+		value: value,
+		children: make(map[string]*LogInfoNode),
+	}
+}
+
+func (node *LogInfoNode) insert(keys []string, value string) error {
+	if len(keys) == 0 {
+		return nil
+	}
+	key := keys[0]
+	if len(keys) > 1 {
+		if child, ok := node.children[key]; ok {
+			child.insert(keys[1:], value)
+		} else {
+			return fmt.Errorf("%s has no parent node", key)
+		}
+	} else {
+		child := newLogInfoNode(value)
+		node.children[key] = child
+	}
+	return nil
+}
+
+func (node *LogInfoNode) get(key string) string {
+	if child, ok := node.children[key]; ok {
+		return child.value
+	}
+	return ""
+}
+
+func (p *Pilot) getLogConfigs(jsonLogPath string, mounts []types.MountPoint, labels map[string]string) ([]*LogConfig, error) {
+	var ret []*LogConfig
 
 	mountsMap := make(map[string]types.MountPoint)
 	for _, mount := range mounts {
 		mountsMap[mount.Destination] = mount
 	}
 
+	var labelNames []string
+	//sort keys
 	for k, _ := range labels {
-		if strings.HasPrefix(k, LABEL_SERVICE_LOGS) && strings.Count(k, ".") == 2 {
-			config, err := p.parseLogConfig(k, jsonLogPath, mountsMap, labels)
-			if err != nil {
-				return nil, err
-			}
+		labelNames = append(labelNames, k)
+	}
 
-			ret = append(ret, *config)
+	sort.Strings(labelNames)
+	root := newLogInfoNode("")
+	for _, k := range labelNames {
+		if !strings.HasPrefix(k, LABEL_SERVICE_LOGS) || strings.Count(k, ".") == 1 {
+			continue
 		}
+		logLabel := strings.TrimPrefix(k, LABEL_SERVICE_LOGS)
+		if err := root.insert(strings.Split(logLabel, "."), labels[k]); err != nil {
+			return nil, err
+		}
+	}
+
+	for name, node := range root.children {
+		logConfig, err := p.parseLogConfig(name, node, jsonLogPath, mountsMap)
+		if err != nil {
+			return nil, err
+		}
+		ret = append(ret, logConfig)
 	}
 	return ret, nil
 }
@@ -374,7 +437,7 @@ func (p *Pilot) exists(containId string) bool {
 	return true
 }
 
-func (p *Pilot) render(containerId string, source Source, configList []LogConfig) (string, error) {
+func (p *Pilot) render(containerId string, source Source, configList []*LogConfig) (string, error) {
 	log.Infof("logs: %v", configList)
 	var buf bytes.Buffer
 
