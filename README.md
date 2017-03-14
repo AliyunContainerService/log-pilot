@@ -29,6 +29,8 @@ docker run -it --rm  -p 10080:8080 \
 
 Now watch the output of fluentd-pilot. You will find that fluentd-pilot get all tomcat's startup logs. If you access tomcat with your broswer, access logs in `/usr/local/tomcat/logs/localhost_access_log.\*.txt` will also be displayed in fluentd-pilot's output.
 
+More Info: [Documents](docs/docs.md)
+
 Feature
 ========
 
