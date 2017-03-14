@@ -3,6 +3,8 @@ Architecture
 
 On every docker host, run a fluentd-pilot instance. Fluentd-pilot will monitor docker events, parse log labels on new docker conatienr, generate appropriate fluentd configuration and notify fluentd to load the new configuration.
 
+![Architecture](architecture.png)
+
 Run Fluentd-pilot
 =================
 
