@@ -40,6 +40,19 @@ Feature
 - Support many log management: elastichsearch, graylog2, awslogs and more.
 - Tags. You could add tags on the logs collected, and later filter by tags in log management.
 
+Build fluentd-pilot
+===================
+
+Prerequisites:
+
+- Go >= 1.6
+
+```
+go get github.com/jzwlqx/fluentd-pilot
+cd $GOPATH/github.com/jzwlqx/fluentd-pilot/docker-images
+./build.sh # This will create a new docker image named pilot:latest
+```
+
 Contribute
 ==========
 
