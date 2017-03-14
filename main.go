@@ -6,7 +6,7 @@ import (
 	"io/ioutil"
 	log "github.com/sirupsen/logrus"
 	"os"
-	"github.com/jzwlqx/fluent-pilot/pilot"
+	"github.com/jzwlqx/fluentd-pilot/pilot"
 )
 
 func main() {

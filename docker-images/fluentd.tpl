@@ -4,7 +4,12 @@
   tag {{ $.containerId }}.{{ .Name }}
   path {{ .HostDir }}/{{ .File }}
   format {{ .Format }}
-  {{if .TimeFormat}} time_format {{ .TimeFormat }}  {{end}}
+
+{{if .FormatConfig}}
+{{range $key, $value := .FormatConfig}}
+{{ $key }} {{ $value }}
+{{end}}
+{{end}}
   pos_file /pilot/pos/fluentd.pos
   refresh_interval 5
 </source>
