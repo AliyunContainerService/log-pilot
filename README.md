@@ -3,7 +3,7 @@ fluentd-pilot
 
 `fluentd-pilot` is an awesome docker log tool. With `fluentd-pilot` you can collect logs from docker hosts and send them to your centralize log system such as elastichsearch, graylog2, awsog and etc. `fluentd-pilot` can collect not only docker stdout but also log file that inside docker containers.
 
-QuickStart
+Quickstart
 ==========
 
 ### Run pilot
@@ -29,7 +29,7 @@ docker run -it --rm  -p 10080:8080 \
 
 Now watch the output of fluentd-pilot. You will find that fluentd-pilot get all tomcat's startup logs. If you access tomcat with your broswer, access logs in `/usr/local/tomcat/logs/localhost_access_log.\*.txt` will also be displayed in fluentd-pilot's output.
 
-Featured
+Feature
 ========
 
 - Single fluentd process per docker host. You don't need to create new fluentd process for every docker container.
