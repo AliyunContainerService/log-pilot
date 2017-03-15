@@ -11,7 +11,6 @@ RUN apk update && apk upgrade && \
 
 COPY plugins/ /etc/fluentd/plugins/
 
-COPY fluentd.conf /etc/fluentd/
 VOLUME /etc/fluentd/conf.d
 
 COPY pilot fluentd.tpl entrypoint config.default /pilot/

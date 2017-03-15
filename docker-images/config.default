@@ -3,6 +3,8 @@
 set -e
 cd $(dirname $0)
 
+FLUENTD_CONFIG=/etc/fluentd/fluentd.conf
+
 assert_not_empty(){
     arg=$1
     shift
@@ -12,11 +14,14 @@ assert_not_empty(){
     fi
 }
 
+mkdir -p /etc/fluentd
+echo "@include conf.d/*.conf" >> $FLUENTD_CONFIG
+
 es(){
 assert_not_empty "$ELASTICSEARCH_HOST" "ELASTICSEARCH_HOST required"
 assert_not_empty "$ELASTICSEARCH_PORT" "ELASTICSEARCH_PORT required"
 
-cat >> /etc/fluentd/fluentd.conf << EOF
+cat >> $FLUENTD_CONFIG << EOF
 <match **>
 @type elasticsearch
 hosts $ELASTICSEARCH_HOST:$ELASTICSEARCH_PORT
@@ -36,7 +41,7 @@ EOF
 
 default(){
 echo "use default output"
-cat >> /etc/fluentd/fluentd.conf << EOF
+cat >> $FLUENTD_CONFIG << EOF
 <match **>
 @type stdout
 </match>
@@ -46,7 +51,7 @@ EOF
 graylog(){
 assert_not_empty "$GRAYLOG_HOST" "GRAYLOG_HOST required"
 assert_not_empty "$GRAYLOG_PORT" "GRAYLOG_PORT required"
-cat >> /etc/fluentd/fluentd.conf << EOF
+cat > $FLUENTD_CONFIG << EOF
 <match **>
 type gelf
 host $GRAYLOG_HOST

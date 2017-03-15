@@ -18,7 +18,6 @@ class Fluent::AddTimeFilter < Fluent::Filter
 		return
 	end
     record[@time_key] = Time.now.strftime '%Y-%m-%dT%H:%M:%S.%L'
-    puts record
-    record
+    return record
   end
 end if defined?(Fluent::Filter)

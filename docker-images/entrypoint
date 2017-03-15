@@ -13,7 +13,5 @@ if ! sh $config; then
     exit 1
 fi
 
-#/usr/bin/fluentd -c /etc/fluentd/fluentd.conf -d /var/run/fluentd.pid --log /var/log/fluentd.log
-#/usr/bin/fluentd -c /etc/fluentd/fluentd.conf -d /var/run/fluentd.pid 
 /pilot/pilot -base /host -template /pilot/fluentd.tpl -log-level debug
 
