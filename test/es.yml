@@ -15,17 +15,15 @@ services:
       aliyun.routing.port_5601: kibana
     links:
       - elasticsearch
-
-        #  pilot:
-        #    image: pilot
-        #    volumes:
-        #      - /var/run/docker.sock:/var/run/docker.sock
-        #      - /:/host
-        #    environment:
-        #      FLUENTD_OUTPUT: elasticsearch
-        #      ELASTICSEARCH_HOST: elasticsearch
-        #      ELASTICSEARCH_PORT: 9200
-        #    links:
-        #      - elasticsearch
-        #
+  pilot:
+    image: pilot
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /:/host
+    environment:
+      FLUENTD_OUTPUT: elasticsearch
+      ELASTICSEARCH_HOST: elasticsearch
+      ELASTICSEARCH_PORT: 9200
+    links:
+      - elasticsearch
 
