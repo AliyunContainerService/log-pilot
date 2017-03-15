@@ -15,6 +15,12 @@
 </source>
 
 <filter {{ $.containerId }}.{{ .Name }}>
+@type add_time
+time_key @timestamp
+</filter>
+
+
+<filter {{ $.containerId }}.{{ .Name }}>
 @type record_transformer
 <record>
 host "#{Socket.gethostname}"
