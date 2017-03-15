@@ -3,6 +3,28 @@ fluentd-pilot
 
 `fluentd-pilot` is an awesome docker log tool. With `fluentd-pilot` you can collect logs from docker hosts and send them to your centralize log system such as elastichsearch, graylog2, awsog and etc. `fluentd-pilot` can collect not only docker stdout but also log file that inside docker containers.
 
+Try it
+======
+
+Prerequisites:
+
+- docker-compose >= 1.6
+- Docker Engine >= 1.6
+
+```
+git clone git@github.com:jzwlqx/fluentd-pilot.git
+cd fluentd-pilot/quickstart
+./run
+```
+
+Then access kibana under the tips. You will find that tomcat's has been collected and sended to kibana.
+
+Create index:
+![kibana](quickstart/Kibana.png)
+
+Query the logs:
+![kibana](quickstart/Kibana2.png)
+
 Quickstart
 ==========
 

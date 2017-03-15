@@ -1,8 +1,0 @@
-#!/bin/bash
-
-docker run -it --name log-test --rm  -p 10080:80 -v /log \
-    --label aliyun.logs.default=stdout \
-    --label aliyun.logs.default.format=json \
-    --label aliyun.logs.default.tags='name=hello,stage=test' \
-    nginx
-

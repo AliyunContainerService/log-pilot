@@ -1,0 +1,13 @@
+tomcat:
+  image: tomcat
+  ports:
+    - "8080:8080"
+  restart: always
+  volumes:
+    - /usr/local/tomcat/logs
+  labels:
+    aliyun.logs.catalina: stdout
+    aliyun.logs.catalina.tags: app=tomcat,stage=test
+    aliyun.logs.access: /usr/local/tomcat/logs/localhost_access_log.*.txt 
+    aliyun.logs.access.tags: app=tomcat,stage=test
+
