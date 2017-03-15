@@ -9,7 +9,7 @@ Try it
 Prerequisites:
 
 - docker-compose >= 1.6
-- Docker Engine >= 1.6
+- Docker Engine >= 1.10
 
 ```
 git clone git@github.com:jzwlqx/fluentd-pilot.git
