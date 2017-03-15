@@ -21,6 +21,11 @@ cat >> /etc/fluentd/fluentd.conf << EOF
 @type elasticsearch
 hosts $ELASTICSEARCH_HOST:$ELASTICSEARCH_PORT
 reconnect_on_error true
+${ELASTICSEARCH_USER:+user ${ELASTICSEARCH_USER}}
+${ELASTICSEARCH_PASSWORD:+password ${ELASTICSEARCH_PASSWORD}}
+${ELASTICSEARCH_PATH:+path ${ELASTICSEARCH_PATH}}
+${ELASTICSEARCH_SCHEME:+scheme ${ELASTICSEARCH_SCHEME}}
+${ELASTICSEARCH_SSL_VERIFY:+ssl_verify ${ELASTICSEARCH_SSL_VERIFY}}
 target_index_key target
 index_name _default_index
 flush_interval 3
