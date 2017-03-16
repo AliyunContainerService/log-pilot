@@ -12,7 +12,7 @@ Prerequisites:
 - Docker Engine >= 1.10
 
 ```
-git clone git@github.com:jzwlqx/fluentd-pilot.git
+git clone git@github.com:AliyunContainerService/fluentd-pilot.git
 cd fluentd-pilot/quickstart
 ./run
 ```
@@ -70,8 +70,8 @@ Prerequisites:
 - Go >= 1.6
 
 ```
-go get github.com/jzwlqx/fluentd-pilot
-cd $GOPATH/github.com/jzwlqx/fluentd-pilot/docker-images
+go get github.com/AliyunContainerService/fluentd-pilot
+cd $GOPATH/github.com/AliyunContainerService/fluentd-pilot/docker-images
 ./build.sh # This will create a new docker image named pilot:latest
 ```
 
