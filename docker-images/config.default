@@ -51,9 +51,9 @@ EOF
 graylog(){
 assert_not_empty "$GRAYLOG_HOST" "GRAYLOG_HOST required"
 assert_not_empty "$GRAYLOG_PORT" "GRAYLOG_PORT required"
-cat > $FLUENTD_CONFIG << EOF
+cat >> $FLUENTD_CONFIG << EOF
 <match **>
-type gelf
+@type gelf
 host $GRAYLOG_HOST
 port $GRAYLOG_PORT
 flush_interval 3s
@@ -61,11 +61,36 @@ flush_interval 3s
 EOF
 }
 
+aliyun_sls(){
+
+
+assert_not_empty "$ALIYUNSLS_PROJECT"         "ALIYUNSLS_PROJECT required"
+assert_not_empty "$ALIYUNSLS_REGION_ENDPOINT" "ALIYUNSLS_REGION_ENDPOINT required"
+assert_not_empty "$ALIYUNSLS_ACCESS_KEY"      "ALIYUNSLS_ACCESS_KEY required"
+assert_not_empty "$ALIYUNSLS_ACCESS_SECRET"   "ALIYUNSLS_ACCESS_SECRET required"
+
+cat >> $FLUENTD_CONFIG << EOF
+<match **>
+@type aliyun_sls
+
+project         $ALIYUNSLS_PROJECT
+region_endpoint $ALIYUNSLS_REGION_ENDPOINT
+access_key      $ALIYUNSLS_ACCESS_KEY
+access_secret   $ALIYUNSLS_ACCESS_SECRET
+
+flush_interval 3s
+</match>
+EOF
+
+}
+
 case "$FLUENTD_OUTPUT" in
     elasticsearch)
         es;;
     graylog)
         graylog;;
+    aliyun_sls)
+        aliyun_sls;;
     *)
         default
 esac
