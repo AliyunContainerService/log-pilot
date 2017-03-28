@@ -46,10 +46,10 @@ module Fluent
         if record and record["target"]
           logStoreName = record["target"]
           if not log_list_hash[logStoreName]
-            log_list = AliyunSlsSdk::LogGroup.new(:logs => [], :topic => @topic, :source => @source)
+            log_list = AliyunSlsSdk::Protobuf::LogGroup.new(:logs => [], :topic => @topic, :source => @source)
             log_list_hash[logStoreName] = log_list
           end
-          log = AliyunSlsSdk::Log.new(:time => Time.now.to_i, :contents => [])
+          log = AliyunSlsSdk::Protobuf::Log.new(:time => Time.now.to_i, :contents => [])
           pack_log_item(log_list_hash[logStoreName], log, record)
         end
       end
@@ -80,7 +80,7 @@ module Fluent
     def pack_hash_log_item(log, hash)
       if hash
         hash.each { |k, v|
-          log_item = AliyunSlsSdk::Log::Content.new(:key => k, :value => v || "")
+          log_item = AliyunSlsSdk::Protobuf::Log::Content.new(:key => k, :value => v || "")
           log.contents << log_item
         }
       end
