@@ -64,4 +64,6 @@ There are many labels you can use to describe the log info.
     - json: a json object per line.
     - regexp: use regex parse log. The pattern is specified by `aliyun.logs.$name.format.pattern = $regex`
 - `aliyun.logs.$name.tags="k1=v1,k2=v2"`: tags will be appended to log. 
-
+- `aliyun.logs.$name.target=target-for-log-storage`: target is used by the output plugins, instruct the plugins to store
+logs in appropriate place. For elasticsearch output, target means the log index in elasticsearch. For aliyun_sls output,
+target means the logstore in aliyun sls. The default value of target is the log name.
