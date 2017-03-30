@@ -28,7 +28,7 @@ host "#{Socket.gethostname}"
 {{ $key }} {{ $value }}
 {{end}}
 
-{{if not .Tags.target}}target {{if $.source.Application}}{{ $.source.Application }}-{{end}}{{ .Name }}{{end}}
+@target {{if .Target}} {{.Target}} {{else if $.source.Application}}{{ $.source.Application }}-{{.Name}} {{else}} {{ .Name }}{{end}}
 
 {{if $.source.Application}}docker_app {{ $.source.Application }} {{end}}
 {{if $.source.Service}}docker_service {{ $.source.Service }} {{end}}

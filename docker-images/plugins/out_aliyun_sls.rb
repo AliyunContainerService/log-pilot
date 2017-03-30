@@ -29,7 +29,7 @@ module Fluent
     end
 
     def format(tag, time, record)
-      if record["target"]
+      if record["@target"]
         [tag, time, record].to_msgpack
       else
         super
@@ -44,8 +44,8 @@ module Fluent
     def write(chunk)
       log_list_hash = {}
       chunk.msgpack_each do |tag, time, record|
-        if record and record["target"]
-          logStoreName = record["target"]
+        if record and record["@target"]
+          logStoreName = record["@target"]
           if not log_list_hash[logStoreName]
             log_list = AliyunSlsSdk::Protobuf::LogGroup.new(:logs => [], :topic => @topic, :source => @source)
             log_list_hash[logStoreName] = log_list
@@ -53,7 +53,7 @@ module Fluent
           log = AliyunSlsSdk::Protobuf::Log.new(:time => Time.now.to_i, :contents => [])
           pack_log_item(log_list_hash[logStoreName], log, record)
         else
-          log.warn "no target key in record: #{record}, tag: #{tag}, time: #{time}"
+          log.warn "no @target key in record: #{record}, tag: #{tag}, time: #{time}"
         end
       end
       log_list_hash.each do |storeName, log_list|

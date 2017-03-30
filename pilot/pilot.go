@@ -108,6 +108,7 @@ type LogConfig struct {
 	FormatConfig map[string]string
 	File         string
 	Tags         map[string]string
+	Target       string
 }
 
 func (p *Pilot) cleanConfigs() error {
@@ -305,6 +306,8 @@ func (p *Pilot) parseLogConfig(name string, info *LogInfoNode, jsonLogPath strin
 		return nil, fmt.Errorf("parse tags for %s error: %v", name, err)
 	}
 
+	target := info.get("target")
+
 	if path == "stdout" {
 		return &LogConfig{
 			Name:         name,
@@ -313,6 +316,7 @@ func (p *Pilot) parseLogConfig(name string, info *LogInfoNode, jsonLogPath strin
 			File:         filepath.Base(jsonLogPath),
 			Tags:         tagMap,
 			FormatConfig: map[string]string{"time_format": "%Y-%m-%dT%H:%M:%S.%NZ"},
+			Target:       target,
 		}, nil
 	}
 
@@ -354,6 +358,7 @@ func (p *Pilot) parseLogConfig(name string, info *LogInfoNode, jsonLogPath strin
 		Tags:         tagMap,
 		HostDir:      filepath.Join(p.base, hostDir),
 		FormatConfig: formatConfig,
+		Target:       target,
 	}, nil
 }
 
