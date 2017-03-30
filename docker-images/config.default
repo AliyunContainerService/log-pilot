@@ -22,7 +22,7 @@ assert_not_empty "$ELASTICSEARCH_HOST" "ELASTICSEARCH_HOST required"
 assert_not_empty "$ELASTICSEARCH_PORT" "ELASTICSEARCH_PORT required"
 
 cat >> $FLUENTD_CONFIG << EOF
-<match **>
+<match docker.**>
 @type elasticsearch
 hosts $ELASTICSEARCH_HOST:$ELASTICSEARCH_PORT
 reconnect_on_error true
@@ -42,7 +42,7 @@ EOF
 default(){
 echo "use default output"
 cat >> $FLUENTD_CONFIG << EOF
-<match **>
+<match docker.**>
 @type stdout
 </match>
 EOF
@@ -52,7 +52,7 @@ graylog(){
 assert_not_empty "$GRAYLOG_HOST" "GRAYLOG_HOST required"
 assert_not_empty "$GRAYLOG_PORT" "GRAYLOG_PORT required"
 cat >> $FLUENTD_CONFIG << EOF
-<match **>
+<match docker.**>
 @type gelf
 host $GRAYLOG_HOST
 port $GRAYLOG_PORT
@@ -64,19 +64,24 @@ EOF
 aliyun_sls(){
 
 
+if [ -f "/run/secrets/aliyun_access_key" ];then
+ALIYUNSLS_ACCESS_KEY_ID=$(cat /run/secrets/aliyun_access_key | awk -F":" '{ print $1 }')
+ALIYUNSLS_ACCESS_KEY_SECRET=$(cat /run/secrets/aliyun_access_key | awk -F":" '{ print $2 }')
+fi
 assert_not_empty "$ALIYUNSLS_PROJECT"         "ALIYUNSLS_PROJECT required"
 assert_not_empty "$ALIYUNSLS_REGION_ENDPOINT" "ALIYUNSLS_REGION_ENDPOINT required"
-assert_not_empty "$ALIYUNSLS_ACCESS_KEY"      "ALIYUNSLS_ACCESS_KEY required"
-assert_not_empty "$ALIYUNSLS_ACCESS_SECRET"   "ALIYUNSLS_ACCESS_SECRET required"
+assert_not_empty "$ALIYUNSLS_ACCESS_KEY_ID"   "ALIYUNSLS_ACCESS_KEY_ID required"
+assert_not_empty "$ALIYUNSLS_ACCESS_KEY_SECRET"   "ALIYUNSLS_ACCESS_KEY_SECRET required"
 
 cat >> $FLUENTD_CONFIG << EOF
-<match **>
+<match docker.**>
 @type aliyun_sls
 
-project         $ALIYUNSLS_PROJECT
-region_endpoint $ALIYUNSLS_REGION_ENDPOINT
-access_key      $ALIYUNSLS_ACCESS_KEY
-access_secret   $ALIYUNSLS_ACCESS_SECRET
+project             $ALIYUNSLS_PROJECT
+region_endpoint     $ALIYUNSLS_REGION_ENDPOINT
+access_key_id       $ALIYUNSLS_ACCESS_KEY_ID
+access_key_secret   $ALIYUNSLS_ACCESS_KEY_SECRET
+ssl_verify          $SSL_VERIFY
 
 flush_interval 3s
 </match>

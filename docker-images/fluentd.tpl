@@ -1,7 +1,7 @@
 {{range .configList}}
 <source>
   @type tail
-  tag {{ $.containerId }}.{{ .Name }}
+  tag docker.{{ $.containerId }}.{{ .Name }}
   path {{ .HostDir }}/{{ .File }}
   format {{ .Format }}
 
@@ -14,13 +14,13 @@
   refresh_interval 1
 </source>
 
-<filter {{ $.containerId }}.{{ .Name }}>
+<filter docker.{{ $.containerId }}.{{ .Name }}>
 @type add_time
 time_key @timestamp
 </filter>
 
 
-<filter {{ $.containerId }}.{{ .Name }}>
+<filter docker.{{ $.containerId }}.{{ .Name }}>
 @type record_transformer
 <record>
 host "#{Socket.gethostname}"

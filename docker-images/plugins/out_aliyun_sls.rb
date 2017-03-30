@@ -5,8 +5,9 @@ module Fluent
 
     config_param :project, :string, :default => nil
     config_param :region_endpoint, :string, :default => nil
-    config_param :access_key, :string, :default => nil
-    config_param :access_secret, :string, :default => nil
+    config_param :access_key_id, :string, :default => nil
+    config_param :access_key_secret, :string, :default => nil
+    config_param :ssl_verify, :bool, :default => false
 
     def initialize
       super
@@ -37,7 +38,7 @@ module Fluent
 
     def client
       @topic = `hostname`.strip
-      @_sls_con ||= AliyunSlsSdk::Connection.new(@project, @region_endpoint, @access_secret, @access_key)
+      @_sls_con ||= AliyunSlsSdk::Connection.new(@project, @region_endpoint, @access_key_id, @access_key_secret)
     end
 
     def write(chunk)
@@ -51,12 +52,14 @@ module Fluent
           end
           log = AliyunSlsSdk::Protobuf::Log.new(:time => Time.now.to_i, :contents => [])
           pack_log_item(log_list_hash[logStoreName], log, record)
+        else
+          log.warn "no target key in record: #{record}, tag: #{tag}, time: #{time}"
         end
       end
       log_list_hash.each do |storeName, log_list|
         retries = 2
         begin
-          client.puts_logs(storeName, log_list)
+          client.puts_logs(storeName, log_list, @ssl_verify)
         rescue Exception => e
           if retries > 0
             log.warn "\tCaught in puts logs: #{e}"
