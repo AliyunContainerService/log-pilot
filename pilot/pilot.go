@@ -160,7 +160,7 @@ func (p *Pilot) processAllContainers() error {
 			return err
 		}
 		if err = p.newContainer(containerJSON); err != nil {
-			return err
+			log.Errorf("fail to process container %s: %v", containerJSON.Name, err)
 		}
 	}
 
@@ -205,7 +205,7 @@ func (p *Pilot) newContainer(containerJSON types.ContainerJSON) error {
 		return err
 	}
 	//TODO validate config before save
-	log.Infof("Save %s to %s", fluentdConfig, p.pathOf(id))
+	//log.Infof("Save %s to %s", fluentdConfig, p.pathOf(id))
 	if err = ioutil.WriteFile(p.pathOf(id), []byte(fluentdConfig), os.FileMode(0644)); err != nil {
 		return err
 	}
