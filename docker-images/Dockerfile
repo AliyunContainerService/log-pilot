@@ -6,6 +6,7 @@ RUN apk update && apk upgrade && \
   apk add ca-certificates wget && \
   gem install fluentd -v "~> 0.12.0" --no-ri --no-rdoc && \
   gem install fluent-plugin-elasticsearch --no-ri --no-rdoc && \
+  gem install gelf -v "~> 3.0.0" --no-ri --no-rdoc && \
   gem install aliyun_sls_sdk -v ">=0.0.5" --no-ri --no-rdoc && \
   apk del build-base ruby-dev && \
   rm -rf /root/.gem
