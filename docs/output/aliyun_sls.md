@@ -2,12 +2,15 @@
 
 #### Environment variables for image `fluentd`
 
-- FLUENTD_OUTPUT=aliyun_sls  # specify your output plugin name
-- ALIYUNSLS_PROJECT=test-fluentd  # specify your aliyun sls project name
-- ALIYUNSLS_REGION_ENDPOINT=cn-hangzhou.log.aliyuncs.com  # specify your region root endpoint
-- ALIYUNSLS_ACCESS_KEY_ID="your aliyun access key id"
-- ALIYUNSLS_ACCESS_KEY_SECRET="your aliyun access key secret"
-- SSL_VERIFY="true" # use `https` scheme to access aliyun sls service, default is false.
+- FLUENTD_OUTPUT=aliyun_sls  # Required, specify your output plugin name
+- ALIYUNSLS_PROJECT=test-fluentd  # Required, specify your aliyun sls project name
+- ALIYUNSLS_REGION_ENDPOINT=cn-hangzhou.log.aliyuncs.com  # Required, specify your region root endpoint
+- ALIYUNSLS_ACCESS_KEY_ID="your aliyun access key id"     # Required 
+- ALIYUNSLS_ACCESS_KEY_SECRET="your aliyun access key secret"  # Required 
+- SSL_VERIFY="true" # Optional, use `https` scheme to access aliyun sls service, default is false.
+- ALIYUNSLS_NEED_CREATE_LOGSTORE="true" # Optional, when set `true`, logstore will be created if not exist, default is false.
+- ALIYUNSLS_CREATE_LOGSTORE_TTL=2  # Optional, used when ALIYUNSLS_NEED_CREATE_LOGSTORE set `true` and as param when creating log store, set the logging data time to live in days default is 1 day to live
+- ALIYUNSLS_CREATE_LOGSTORE_SHARD_COUNT=2 # Optional, used when ALIYUNSLS_NEED_CREATE_LOGSTORE set `true` and as param when creating log store, set the shard count, default is 2 shard count 
 
 #### Labels for your `app image` whose log will streamed to aliyun sls
 

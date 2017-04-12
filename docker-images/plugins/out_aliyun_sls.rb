@@ -46,26 +46,20 @@ module Fluent
     end
 
     def createLogStore(logstore_name)
+      retries = 2
       begin
-        getStoreResp = client.get_logstore(@project, logstore_name)
+        createLogStoreResp = client.create_logstore(@project, logstore_name, @create_logstore_ttl, @create_logstore_shard_count)
       rescue AliyunSlsSdk::LogException => e
-        if e.errorCode == "LogStoreNotExist"
-          retries = 2
-          begin
-            createLogStoreResp = logClient.create_logstore(@project, logstore_name, @create_logstore_ttl, @create_logstore_shard_count)
-          rescue AliyunSlsSdk::LogException => e
-            if e.errorCode == "LogstoreAlreadyExist"
-              log.warn "logstore #{logstore_name} already exist"
-            else
-              raise
-            end
-          rescue => e
-            if retries > 0
-              log.warn "Error caught when creating logs store: #{e}"
-              retries -= 1
-              retry
-            end
-          end
+        if e.errorCode == "LogStoreAlreadyExist"
+          log.warn "logstore #{logstore_name} already exist"
+        else
+          raise
+        end
+      rescue => e
+        if retries > 0
+          log.warn "Error caught when creating logs store: #{e}"
+          retries -= 1
+          retry
         end
       end
     end
@@ -83,18 +77,9 @@ module Fluent
       chunk.msgpack_each do |tag, time, record|
         if record and record["@target"]
           logStoreName = record["@target"]
-          if not @log_store_created
-            if @need_create_logstore
-              createLogStore(logStoreName)
-              @log_store_created = true
-            else
-              @log_store_created = true
-            end
-          end
           record.delete("@target")
           if not log_list_hash[logStoreName]
-            logItems = []
-            log_list_hash[logStoreName] = logItems
+            log_list_hash[logStoreName] = []
           end
           log_list_hash[logStoreName] << getLogItem(record)
         else
@@ -102,23 +87,31 @@ module Fluent
         end
       end
 
-      puts log_list_hash.to_s
       log_list_hash.each do |storeName, logitems|
-        puts storeName
-        puts logitems
         putLogRequest = AliyunSlsSdk::PutLogsRequest.new(@project, storeName, @topic, nil, logitems, nil, true)
-        retries = 2
+        retries = 0
         begin
           client.put_logs(putLogRequest)
-        rescue => e
-          if retries > 0
-            log.warn "\tCaught in puts logs: #{e}"
-            client.http.shutdown
-            @_sls_con = nil
-            retries -= 1
-            retry
+        rescue  => e
+          if e.instance_of?(AliyunSlsSdk::LogException) && e.errorCode == "LogStoreNotExist" && @need_create_logstore
+            createLogStore(storeName)
+            # wait up to 60 seconds to create the logstore
+            if retries < 3
+              retries += 1
+              sleep(10 * retries)
+              retry
+            end
+          else
+            log.warn "\tCaught in puts logs: #{e.message}"
+            if retries < 3
+              client.http.shutdown
+              @_sls_con = nil
+              retries += 1
+              sleep(1 * retries)
+              retry
+            end
+            log.error "Could not puts logs to aliyun sls: #{e.message}"
           end
-          log.error "Could not puts logs to aliyun sls: #{e}"
         end
       end
     end
