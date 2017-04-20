@@ -3,7 +3,7 @@ fluentd-pilot
 
 [![CircleCI](https://circleci.com/gh/AliyunContainerService/fluentd-pilot.svg?style=svg)](https://circleci.com/gh/AliyunContainerService/fluentd-pilot)
 
-`fluentd-pilot` is an awesome docker log tool. With `fluentd-pilot` you can collect logs from docker hosts and send them to your centralize log system such as elastichsearch, graylog2, awsog and etc. `fluentd-pilot` can collect not only docker stdout but also log file that inside docker containers.
+`fluentd-pilot` is an awesome docker log tool. With `fluentd-pilot` you can collect logs from docker hosts and send them to your centralize log system such as elasticsearch, graylog2, awsog and etc. `fluentd-pilot` can collect not only docker stdout but also log file that inside docker containers.
 
 Try it
 ======
