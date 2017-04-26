@@ -32,6 +32,7 @@ host "#{Socket.gethostname}"
 
 {{if $.source.Application}}docker_app {{ $.source.Application }} {{end}}
 {{if $.source.Service}}docker_service {{ $.source.Service }} {{end}}
+{{if $.source.POD}}k8s_pod {{ $.source.POD }} {{end}}
 {{if $.source.Container}}docker_container {{ $.source.Container }} {{end}}
 </record>
 </filter>
