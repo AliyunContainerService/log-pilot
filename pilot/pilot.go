@@ -25,10 +25,12 @@ aliyun.log: /var/log/hello.log[:json][;/var/log/abc/def.log[:txt]]
 */
 
 const LABEL_SERVICE_LOGS = "aliyun.logs."
+const ENV_SERVICE_LOGS = "aliyun_logs_"
 const FLUENTD_CONF_HOME = "/etc/fluentd"
 
 const LABEL_PROJECT = "com.docker.compose.project"
 const LABEL_SERVICE = "com.docker.compose.service"
+const LABEL_POD     = "io.kubernetes.pod.name"
 
 type Pilot struct {
 	mutex        sync.Mutex
@@ -97,6 +99,7 @@ func (p *Pilot) watch() error {
 type Source struct {
 	Application string
 	Service     string
+	POD         string
 	Container   string
 }
 
@@ -172,6 +175,7 @@ func (p *Pilot) newContainer(containerJSON types.ContainerJSON) error {
 	jsonLogPath := containerJSON.LogPath
 	mounts := containerJSON.Mounts
 	labels := containerJSON.Config.Labels
+	env    := containerJSON.Config.Env
 
 	//logConfig.containerDir match types.mountPoint
 	/**
@@ -185,7 +189,21 @@ func (p *Pilot) newContainer(containerJSON types.ContainerJSON) error {
 	source := Source{
 		Application: labels[LABEL_PROJECT],
 		Service:     labels[LABEL_SERVICE],
+		POD:         labels[LABEL_POD],
 		Container:   strings.TrimPrefix(containerJSON.Name, "/"),
+	}
+
+	for _, e := range env {
+		if !strings.HasPrefix(e, ENV_SERVICE_LOGS) {
+			continue
+		}
+		envLabel := strings.Split(e,"=")
+		if len(envLabel) == 2 {
+			log.Debugf("%+v", envLabel)
+			labelKey := strings.Replace(envLabel[0], "_", ".", -1)
+			labels[labelKey] = envLabel[1]
+		}
+
 	}
 
 	logConfigs, err := p.getLogConfigs(jsonLogPath, mounts, labels)
