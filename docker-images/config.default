@@ -48,6 +48,35 @@ cat >> $FLUENTD_CONFIG << EOF
 EOF
 }
 
+file(){
+assert_not_empty "$FILE_PATH" "FILE_PATH required"
+cat >> $FLUENTD_CONFIG << EOF
+<match docker.**>
+@type file
+path $FILE_PATH
+</match>
+EOF
+}
+
+kafka(){
+assert_not_empty "$ZOOKEEPER_HOST" "ZOOKEEPER_HOST required"
+assert_not_empty "$ZOOKEEPER_PORT" "ZOOKEEPER_PORT required"
+cat >> $FLUENTD_CONFIG << EOF
+<match docker.**>
+@type               kafka
+zookeeper           $ZOOKEEPER_HOST:$ZOOKEEPER_PORT
+default_topic       @target
+flush_interval      3s
+buffer_type         file
+ack_timeout_ms      2000
+output_data_type    attr:all
+compression_codec   none
+</match>
+EOF
+}
+
+
+
 graylog(){
 assert_not_empty "$GRAYLOG_HOST" "GRAYLOG_HOST required"
 assert_not_empty "$GRAYLOG_PORT" "GRAYLOG_PORT required"
@@ -100,6 +129,8 @@ case "$FLUENTD_OUTPUT" in
         graylog;;
     aliyun_sls)
         aliyun_sls;;
+    file)
+        file;;
     *)
         default
 esac
