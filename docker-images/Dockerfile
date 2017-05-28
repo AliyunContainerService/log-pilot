@@ -10,6 +10,7 @@ RUN apk update && apk upgrade && \
   gem install aliyun_sls_sdk -v ">=0.0.9" --no-ri --no-rdoc && \
   gem install fluent-plugin-kafka --no-ri --no-rdoc&& \
   gem install zookeeper --no-ri --no-rdoc&& \
+  gem install ruby-kafka --no-ri --no-rdoc&& \
   apk del build-base ruby-dev && \
   rm -rf /root/.gem
 
