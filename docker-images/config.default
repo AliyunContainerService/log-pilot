@@ -69,8 +69,8 @@ default_topic       @target
 flush_interval      3s
 buffer_type         file
 ack_timeout_ms      2000
-output_data_type    attr:all
-compression_codec   none
+output_data_type    json
+compression_codec   gzip
 </match>
 EOF
 }
@@ -131,6 +131,8 @@ case "$FLUENTD_OUTPUT" in
         aliyun_sls;;
     file)
         file;;
+    kafka)
+        kafka;;
     *)
         default
 esac

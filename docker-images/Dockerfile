@@ -8,6 +8,7 @@ RUN apk update && apk upgrade && \
   gem install fluent-plugin-elasticsearch --no-ri --no-rdoc && \
   gem install gelf -v "~> 3.0.0" --no-ri --no-rdoc && \
   gem install aliyun_sls_sdk -v ">=0.0.9" --no-ri --no-rdoc && \
+  gem install fluent-plugin-kafka --no-ri --no-rdoc&& \
   apk del build-base ruby-dev && \
   rm -rf /root/.gem
 
