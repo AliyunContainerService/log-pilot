@@ -61,7 +61,6 @@ EOF
 kafka(){
 assert_not_empty "$ZOOKEEPER_HOST" "ZOOKEEPER_HOST required"
 assert_not_empty "$ZOOKEEPER_PORT" "ZOOKEEPER_PORT required"
-assert_not_empty "$BROKERS" "BROKERS required"
 cat >> $FLUENTD_CONFIG << EOF
 <match docker.**>
 @type               kafka
