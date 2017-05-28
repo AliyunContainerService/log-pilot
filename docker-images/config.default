@@ -67,7 +67,7 @@ cat >> $FLUENTD_CONFIG << EOF
 @type               kafka
 #zookeeper           $ZOOKEEPER_HOST:$ZOOKEEPER_PORT
 brokers             $BROKERS
-default_topic       _default_index
+default_topic       @target
 flush_interval      3s
 buffer_type         file
 ack_timeout_ms      2000
