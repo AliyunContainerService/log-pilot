@@ -8,6 +8,7 @@ RUN apk update && apk upgrade && \
   gem install fluent-plugin-elasticsearch --no-ri --no-rdoc && \
   gem install gelf -v "~> 3.0.0" --no-ri --no-rdoc && \
   gem install aliyun_sls_sdk -v ">=0.0.9" --no-ri --no-rdoc && \
+  apt-get install git && \
   git clone git clone -b add_topic_key_config https://github.com/RussellCloud/fluent-plugin-kafka.git && \
   cd fluent-plugin-kafka/ && \
   gem build fluent-plugin-kafka.gemspec && \
