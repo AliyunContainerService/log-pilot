@@ -67,6 +67,7 @@ cat >> $FLUENTD_CONFIG << EOF
 @type               kafka
 brokers             $BROKERS
 default_topic       test
+topic_key           target
 flush_interval      3s
 buffer_type         file
 ack_timeout         2000
