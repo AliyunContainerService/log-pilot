@@ -8,7 +8,7 @@ RUN apk update && apk upgrade && \
   gem install fluent-plugin-elasticsearch --no-ri --no-rdoc && \
   gem install gelf -v "~> 3.0.0" --no-ri --no-rdoc && \
   gem install aliyun_sls_sdk -v ">=0.0.9" --no-ri --no-rdoc && \
-  gem install specific_install && \
+  gem install specific_install --no-ri --no-rdoc&& \
   gem specific_install https://github.com/RussellCloud/fluent-plugin-kafka.git && \
   gem install zookeeper --no-ri --no-rdoc&& \
   gem install ruby-kafka --no-ri --no-rdoc&& \
