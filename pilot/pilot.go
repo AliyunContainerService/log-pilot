@@ -16,6 +16,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"time"
 	"text/template"
 )
 
@@ -270,7 +271,7 @@ func (p *Pilot) processEvent(msg events.Message) error {
 		return p.newContainer(containerJSON)
 	case "destroy":
 		log.Debugf("Process container destory event: %s", containerId)
-		p.delContainer(containerId)
+		time.AfterFunc(5*time.Second, p.delContainer(containerId))
 	}
 	return nil
 }
