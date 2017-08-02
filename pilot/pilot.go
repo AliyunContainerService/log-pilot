@@ -282,11 +282,11 @@ func (p *Pilot) hostDirOf(path string, mounts map[string]types.MountPoint) strin
 			if confPath == path {
 				return point.Source
 			} else {
-				relPath,err:=filepath.Rel(path, confPath)
+				relPath, err := filepath.Rel(path, confPath)
 				if err != nil {
 					panic(err)
 				}
-				return fmt.Sprintf("%s/%s", point.Source,relPath)
+				return fmt.Sprintf("%s/%s", point.Source, relPath)
 			}
 		}
 		path = filepath.Dir(path)
