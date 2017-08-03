@@ -276,9 +276,18 @@ func (p *Pilot) processEvent(msg events.Message) error {
 }
 
 func (p *Pilot) hostDirOf(path string, mounts map[string]types.MountPoint) string {
+	confPath := path
 	for {
 		if point, ok := mounts[path]; ok {
-			return point.Source
+			if confPath == path {
+				return point.Source
+			} else {
+				relPath, err := filepath.Rel(path, confPath)
+				if err != nil {
+					panic(err)
+				}
+				return fmt.Sprintf("%s/%s", point.Source, relPath)
+			}
 		}
 		path = filepath.Dir(path)
 		if path == "/" || path == "." {
