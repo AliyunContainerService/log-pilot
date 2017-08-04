@@ -158,6 +158,9 @@ func (p *Pilot) processAllContainers() error {
 	}
 
 	for _, c := range containers {
+		if c.State == "removing" {
+			continue
+		}
 		containerJSON, err := p.client().ContainerInspect(context.Background(), c.ID)
 		if err != nil {
 			return err
