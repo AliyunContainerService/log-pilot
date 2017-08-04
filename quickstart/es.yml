@@ -16,7 +16,8 @@ services:
     links:
       - elasticsearch
   pilot:
-    image: registry.cn-hangzhou.aliyuncs.com/acs-sample/fluentd-pilot:latest
+    image: pilot:latest
+    privileged: true
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - /:/host
