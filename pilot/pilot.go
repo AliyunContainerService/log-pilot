@@ -96,13 +96,6 @@ func (p *Pilot) watch() error {
 	}
 }
 
-type Source struct {
-	Application string
-	Service     string
-	POD         string
-	Container   string
-}
-
 type LogConfig struct {
 	Name         string
 	HostDir      string
@@ -166,7 +159,7 @@ func (p *Pilot) processAllContainers() error {
 		if err != nil {
 			return err
 		}
-		if err = p.newContainer(containerJSON); err != nil {
+		if err = p.newContainer(&containerJSON); err != nil {
 			log.Errorf("fail to process container %s: %v", containerJSON.Name, err)
 		}
 	}
@@ -174,7 +167,27 @@ func (p *Pilot) processAllContainers() error {
 	return nil
 }
 
-func (p *Pilot) newContainer(containerJSON types.ContainerJSON) error {
+func putIfNotEmpty(store map[string]string, key, value string) {
+	if key == "" || value == "" {
+		return
+	}
+
+	store[key] = value
+}
+
+func container(containerJSON *types.ContainerJSON) map[string]string {
+	labels := containerJSON.Config.Labels
+	c := make(map[string]string)
+	putIfNotEmpty(c, "docker_app", labels[LABEL_PROJECT])
+	putIfNotEmpty(c, "docker_service", labels[LABEL_SERVICE])
+	putIfNotEmpty(c, "k8s_pod", labels[LABEL_POD])
+	putIfNotEmpty(c, "docker_container", strings.TrimPrefix(containerJSON.Name, "/"))
+	extension(c, containerJSON)
+
+	return c
+}
+
+func (p *Pilot) newContainer(containerJSON *types.ContainerJSON) error {
 	id := containerJSON.ID
 	jsonLogPath := containerJSON.LogPath
 	mounts := containerJSON.Mounts
@@ -190,12 +203,7 @@ func (p *Pilot) newContainer(containerJSON types.ContainerJSON) error {
 	查找：从containerdir开始查找最近的一层挂载
 	*/
 
-	source := Source{
-		Application: labels[LABEL_PROJECT],
-		Service:     labels[LABEL_SERVICE],
-		POD:         labels[LABEL_POD],
-		Container:   strings.TrimPrefix(containerJSON.Name, "/"),
-	}
+	container := container(containerJSON)
 
 	for _, e := range env {
 		if !strings.HasPrefix(e, ENV_SERVICE_LOGS) {
@@ -221,7 +229,7 @@ func (p *Pilot) newContainer(containerJSON types.ContainerJSON) error {
 
 	//pilot.findMounts(logConfigs, jsonLogPath, mounts)
 	//生成配置
-	fluentdConfig, err := p.render(id, source, logConfigs)
+	fluentdConfig, err := p.render(id, container, logConfigs)
 	if err != nil {
 		return err
 	}
@@ -271,7 +279,7 @@ func (p *Pilot) processEvent(msg events.Message) error {
 		if err != nil {
 			return err
 		}
-		return p.newContainer(containerJSON)
+		return p.newContainer(&containerJSON)
 	case "destroy":
 		log.Debugf("Process container destory event: %s", containerId)
 		p.delContainer(containerId)
@@ -479,14 +487,14 @@ func (p *Pilot) exists(containId string) bool {
 	return true
 }
 
-func (p *Pilot) render(containerId string, source Source, configList []*LogConfig) (string, error) {
+func (p *Pilot) render(containerId string, container map[string]string, configList []*LogConfig) (string, error) {
 	log.Infof("logs: %v", configList)
 	var buf bytes.Buffer
 
 	context := map[string]interface{}{
 		"containerId": containerId,
 		"configList":  configList,
-		"source":      source,
+		"container":   container,
 	}
 	if err := p.tpl.Execute(&buf, context); err != nil {
 		return "", err
