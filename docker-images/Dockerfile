@@ -3,6 +3,7 @@ FROM alpine:3.5
 RUN apk update && apk upgrade && \  
   apk add ruby-json ruby-irb && \
   apk add build-base ruby-dev && \
+  apk add python && \
   apk add ca-certificates wget && \
   gem install fluentd -v "~> 0.12.0" --no-ri --no-rdoc && \
   gem install fluent-plugin-elasticsearch --no-ri --no-rdoc && \
@@ -19,5 +20,6 @@ COPY pilot fluentd.tpl entrypoint config.default /pilot/
 VOLUME /pilot/pos
 
 EXPOSE 24224
+WORKDIR /pilot/
 #CMD exec fluentd -c /fluentd/etc/$FLUENTD_CONF -p /fluentd/plugins $FLUENTD_OPT
 CMD /pilot/entrypoint

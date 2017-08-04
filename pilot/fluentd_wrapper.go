@@ -18,7 +18,13 @@ func StartFluentd() error {
 	fluentd = exec.Command("/usr/bin/fluentd", "-c", "/etc/fluentd/fluentd.conf", "-p", "/etc/fluentd/plugins")
 	fluentd.Stderr = os.Stderr
 	fluentd.Stdout = os.Stdout
-	return fluentd.Start()
+	err := fluentd.Start()
+	if err != nil {
+		go func() {
+			fluentd.Wait()
+		}()
+	}
+	return err
 }
 
 func ReloadFluentd() error {
