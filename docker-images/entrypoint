@@ -13,5 +13,9 @@ if ! sh $config; then
     exit 1
 fi
 
+for m in $(tac /proc/mounts | awk '{print $2}' | grep /containers/.*/shm$); do
+        umount $m || true
+done
+
 /pilot/pilot -base /host -template /pilot/fluentd.tpl -log-level debug
 
