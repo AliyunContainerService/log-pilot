@@ -1,36 +1,22 @@
-#!/usr/bin/python
-#coding: utf-8
+#!/bin/sh
 
-import sys 
-import os
-import os.path
-import subprocess
+cd $(dirname $0)
+config=config.default
+if [ -f "config.custom" ]; then
+    config=config.custom
+fi
 
-base='/host'
+chmod +x $config
 
-def umount(volume):
-    subprocess.check_call('umount %s' % volume, shell=True) 
-    #TODO retry
+if ! sh $config; then
+    echo "failed generate config with $config"
+    exit 1
+fi
 
-def cleanup():
-    with open('/etc/mtab', 'r') as f:
-        mounts = f.read().decode('utf-8')
-    umounts = []
-    for line in mounts.split('\n'):
-        ftab = line.split()
-        if len(ftab) > 1 and ftab[1].startswith(base + '/'):
-            umounts.append(ftab[1])
-    for volume in sorted(umounts, reverse=True):
-        umount(volume)
+if [ -z "$UMOUNT" ] || [ $UMOUNT != 'false' ]; then
+		for m in $(tac /proc/mounts | awk '{print $2}' | grep /containers/.*/shm$); do
+				umount $m || true
+		done
+fi
 
-def run():
-    os.execve('/pilot/pilot', ['/pilot/pilot', '-template', '/pilot/fluentd.tpl','-base', base, '-log-level', 'debug' ], os.environ)
-    
-def config():
-    subprocess.check_call(['/pilot/config.default'])
-
-if __name__ == '__main__':
-    config()
-    cleanup()
-    run()
-
+/pilot/pilot -base /host -template /pilot/fluentd.tpl -log-level debug
