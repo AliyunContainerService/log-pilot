@@ -65,7 +65,8 @@ func New(tplStr string, baseDir string) (*Pilot, error) {
 func (p *Pilot) watch() error {
 
 	p.reloadable = false
-	if err := p.processAllContainers(); err != nil {
+	if err := p.
+	(); err != nil {
 		return err
 	}
 	StartFluentd()
@@ -158,6 +159,9 @@ func (p *Pilot) processAllContainers() error {
 	}
 
 	for _, c := range containers {
+		if c.State == "removing" {
+			continue
+		}
 		containerJSON, err := p.client().ContainerInspect(context.Background(), c.ID)
 		if err != nil {
 			return err
