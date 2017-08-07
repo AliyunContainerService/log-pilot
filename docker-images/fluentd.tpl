@@ -16,7 +16,7 @@
 
 <filter docker.{{ $.containerId }}.{{ .Name }}>
 @type add_time
-time_key @timestamp
+time_key {{ .TimeKey}}
 </filter>
 
 

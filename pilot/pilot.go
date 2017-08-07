@@ -65,8 +65,7 @@ func New(tplStr string, baseDir string) (*Pilot, error) {
 func (p *Pilot) watch() error {
 
 	p.reloadable = false
-	if err := p.
-	(); err != nil {
+	if err := p.processAllContainers(); err != nil {
 		return err
 	}
 	StartFluentd()
@@ -113,6 +112,7 @@ type LogConfig struct {
 	File         string
 	Tags         map[string]string
 	Target       string
+	TimeKey      string
 }
 
 func (p *Pilot) cleanConfigs() error {
@@ -338,6 +338,11 @@ func (p *Pilot) parseLogConfig(name string, info *LogInfoNode, jsonLogPath strin
 
 	target := info.get("target")
 
+	timeKey := info.get("time_key")
+	if timeKey == "" {
+		timeKey = "@timestamp"
+	}
+
 	if path == "stdout" {
 		return &LogConfig{
 			Name:         name,
@@ -347,6 +352,7 @@ func (p *Pilot) parseLogConfig(name string, info *LogInfoNode, jsonLogPath strin
 			Tags:         tagMap,
 			FormatConfig: map[string]string{"time_format": "%Y-%m-%dT%H:%M:%S.%NZ"},
 			Target:       target,
+			TimeKey:      timeKey,
 		}, nil
 	}
 
@@ -389,6 +395,7 @@ func (p *Pilot) parseLogConfig(name string, info *LogInfoNode, jsonLogPath strin
 		HostDir:      filepath.Join(p.base, hostDir),
 		FormatConfig: formatConfig,
 		Target:       target,
+		TimeKey:      timeKey,
 	}, nil
 }
 
