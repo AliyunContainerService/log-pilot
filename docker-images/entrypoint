@@ -14,7 +14,7 @@ if ! sh $config; then
 fi
 
 if [ -z "$UMOUNT" ] || [ $UMOUNT != 'false' ]; then
-		for m in $(tac /proc/mounts | awk '{print $2}' | grep /containers/.*/shm$); do
+		for m in $(tac /proc/mounts | awk '{print $2}' | grep /host/.*$); do
 				umount $m || true
 		done
 fi
