@@ -1,22 +1,37 @@
-#!/bin/sh
+#!/usr/bin/python
+#coding: utf-8
 
-cd $(dirname $0)
-config=config.default
-if [ -f "config.custom" ]; then
-    config=config.custom
-fi
+import sys
+import os
+import os.path
+import subprocess
 
-chmod +x $config
+base='/host'
 
-if ! sh $config; then
-    echo "failed generate config with $config"
-    exit 1
-fi
+def umount(volume):
+    subprocess.check_call('umount %s' % volume, shell=True)
+    #TODO retry
 
-if [ -z "$UMOUNT" ] || [ $UMOUNT != 'false' ]; then
-		for m in $(tac /proc/mounts | awk '{print $2}' | grep /host/.*$); do
-				umount $m || true
-		done
-fi
+def cleanup():
+    with open('/proc/mounts', 'r') as f:
+        mounts = f.read().decode('utf-8')
+    umounts = []
+    for line in mounts.split('\n'):
+        ftab = line.split()
+        if len(ftab) > 1 and ftab[1].startswith(base + '/'):
+            umounts.append(ftab[1])
+    for volume in sorted(umounts, reverse=True):
+        umount(volume)
 
-/pilot/pilot -base /host -template /pilot/fluentd.tpl -log-level debug
+def run():
+    os.execve('/pilot/pilot', ['/pilot/pilot', '-template', '/pilot/fluentd.tpl','-base', base, '-log-level', 'debug' ], os.environ)
+
+def config():
+    subprocess.check_call(['/pilot/config.default'])
+
+if __name__ == '__main__':
+    config()
+    cleanup()
+    run()
+
+
