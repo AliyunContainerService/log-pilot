@@ -113,6 +113,8 @@ type LogConfig struct {
 	Tags         map[string]string
 	Target       string
 	TimeKey      string
+	TimeFormat   string
+	HostKey      string
 }
 
 func (p *Pilot) cleanConfigs() error {
@@ -343,6 +345,16 @@ func (p *Pilot) parseLogConfig(name string, info *LogInfoNode, jsonLogPath strin
 		timeKey = "@timestamp"
 	}
 
+	timeFormat := info.get("time_format")
+	if timeFormat == "" {
+		timeFormat = "%Y-%m-%dT%H:%M:%S.%L"
+	}
+
+	hostKey := info.get("host_key")
+	if hostKey == "" {
+		hostKey = "host"
+	}
+
 	if path == "stdout" {
 		return &LogConfig{
 			Name:         name,
@@ -353,6 +365,8 @@ func (p *Pilot) parseLogConfig(name string, info *LogInfoNode, jsonLogPath strin
 			FormatConfig: map[string]string{"time_format": "%Y-%m-%dT%H:%M:%S.%NZ"},
 			Target:       target,
 			TimeKey:      timeKey,
+			TimeFormat:   timeFormat,
+			HostKey:      hostKey,
 		}, nil
 	}
 
@@ -396,6 +410,8 @@ func (p *Pilot) parseLogConfig(name string, info *LogInfoNode, jsonLogPath strin
 		FormatConfig: formatConfig,
 		Target:       target,
 		TimeKey:      timeKey,
+		TimeFormat:   timeFormat,
+		HostKey:      hostKey,
 	}, nil
 }
 

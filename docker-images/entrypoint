@@ -5,12 +5,17 @@ import sys
 import os
 import os.path
 import subprocess
+import logging
+import socket
 
 base='/host'
 
 def umount(volume):
-    subprocess.check_call('umount %s' % volume, shell=True)
-    #TODO retry
+    try:
+        subprocess.check_call('umount %s' % volume, shell=True)
+        # TODO retry
+    except subprocess.CalledProcessError:
+        logging.info('umount : %s error', volume)
 
 def cleanup():
     with open('/proc/mounts', 'r') as f:
@@ -29,7 +34,14 @@ def run():
 def config():
     subprocess.check_call(['/pilot/config.default'])
 
+def host_ip():
+    if os.getenv('NEED_HOST_IP') and os.getenv('NEED_HOST_IP') == 'true':
+        host_name = socket.getfqdn(socket.gethostname())
+        host_ip = socket.gethostbyname(host_name)
+        os.putenv("HOST_IP", host_ip)
+
 if __name__ == '__main__':
+	host_ip()
     config()
     cleanup()
     run()

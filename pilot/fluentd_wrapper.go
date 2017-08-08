@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"syscall"
 	"time"
+	"strings"
 )
 
 var fluentd *exec.Cmd
@@ -34,7 +35,7 @@ func shell(command string) string {
 	if err != nil {
 		fmt.Printf("error %v", err)
 	}
-	return string(out)
+	return strings.Replace(string(out), "\n", "", -1)
 }
 
 func ReloadFluentd() error {
@@ -50,7 +51,7 @@ func ReloadFluentd() error {
 		fluentd.Process.Signal(syscall.SIGHUP)
 		time.Sleep(5 * time.Second)
 		afterChildId := shell(command)
-		log.Infof("after reload childId : %s", childId)
+		log.Infof("after reload childId : %s", afterChildId)
 		if childId == afterChildId {
 			log.Infof("kill childId : %s", childId)
 			shell("kill -9 " + childId)
