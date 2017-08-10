@@ -89,11 +89,11 @@ module Fluent
       end
 
       log_list_hash.each do |storeName, logitems|
-	if @host_ip
-      	  putLogRequest = AliyunSlsSdk::PutLogsRequest.new(@project, storeName, @topic, @host_ip, logitems, nil, true)
-      	else
-      	  putLogRequest = AliyunSlsSdk::PutLogsRequest.new(@project, storeName, @topic, nil, logitems, nil, true)
-      	end
+        if @host_ip
+          putLogRequest = AliyunSlsSdk::PutLogsRequest.new(@project, storeName, @topic, @host_ip, logitems, nil, true)
+        else
+          putLogRequest = AliyunSlsSdk::PutLogsRequest.new(@project, storeName, @topic, nil, logitems, nil, true)
+        end
         retries = 0
         begin
           client.put_logs(putLogRequest)
