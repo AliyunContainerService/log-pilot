@@ -34,14 +34,7 @@ def run():
 def config():
     subprocess.check_call(['/pilot/config.default'])
 
-def host_ip():
-    if os.getenv('NEED_HOST_IP') and os.getenv('NEED_HOST_IP') == 'true':
-        host_name = socket.getfqdn(socket.gethostname())
-        host_ip = socket.gethostbyname(host_name)
-        os.putenv("HOST_IP", host_ip)
-
 if __name__ == '__main__':
-    host_ip()
     config()
     cleanup()
     run()
