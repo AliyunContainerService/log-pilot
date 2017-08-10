@@ -11,7 +11,7 @@ module Fluent
     config_param :need_create_logstore, :bool, :default => false
     config_param :create_logstore_ttl, :integer, :default => 1
     config_param :create_logstore_shard_count, :integer, :default => 2
-	  config_param :host_ip, :string, :default => nil
+    config_param :host_ip, :string, :default => nil
 
     def initialize
       super
