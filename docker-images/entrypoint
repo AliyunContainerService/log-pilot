@@ -6,7 +6,6 @@ import os
 import os.path
 import subprocess
 import logging
-import socket
 
 base='/host'
 
