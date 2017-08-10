@@ -41,7 +41,7 @@ def host_ip():
         os.putenv("HOST_IP", host_ip)
 
 if __name__ == '__main__':
-	host_ip()
+    host_ip()
     config()
     cleanup()
     run()
