@@ -49,7 +49,7 @@ func init() {
 	Register("apache_error", simpleConverter([]string{}))
 	Register("nginx", simpleConverter([]string{}))
 	Register("regexp", func(info *LogInfoNode) (map[string]string, error) {
-		ret, err := simpleConverter([]string{"pattern", "time_format"})(info)
+		ret, err := simpleConverter([]string{"pattern", "time_format", "time_key", "keep_time_key"})(info)
 		if err != nil {
 			return ret, err
 		}

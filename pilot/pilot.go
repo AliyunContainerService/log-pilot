@@ -113,6 +113,8 @@ type LogConfig struct {
 	Tags         map[string]string
 	Target       string
 	TimeKey      string
+	TimeFormat   string
+	HostKey      string
 }
 
 func (p *Pilot) cleanConfigs() error {
@@ -343,6 +345,16 @@ func (p *Pilot) parseLogConfig(name string, info *LogInfoNode, jsonLogPath strin
 		timeKey = "@timestamp"
 	}
 
+	timeFormat := info.get("time_format")
+	if timeFormat == "" {
+		timeFormat = "%Y-%m-%dT%H:%M:%S.%L"
+	}
+
+	hostKey := info.get("host_key")
+	if hostKey == "" {
+		hostKey = "host"
+	}
+
 	if path == "stdout" {
 		return &LogConfig{
 			Name:         name,
@@ -353,6 +365,8 @@ func (p *Pilot) parseLogConfig(name string, info *LogInfoNode, jsonLogPath strin
 			FormatConfig: map[string]string{"time_format": "%Y-%m-%dT%H:%M:%S.%NZ"},
 			Target:       target,
 			TimeKey:      timeKey,
+			TimeFormat:   timeFormat,
+			HostKey:      hostKey,
 		}, nil
 	}
 
@@ -396,6 +410,8 @@ func (p *Pilot) parseLogConfig(name string, info *LogInfoNode, jsonLogPath strin
 		FormatConfig: formatConfig,
 		Target:       target,
 		TimeKey:      timeKey,
+		TimeFormat:   timeFormat,
+		HostKey:      hostKey,
 	}, nil
 }
 
@@ -463,11 +479,37 @@ func (p *Pilot) getLogConfigs(jsonLogPath string, mounts []types.MountPoint, lab
 	}
 
 	for name, node := range root.children {
-		logConfig, err := p.parseLogConfig(name, node, jsonLogPath, mountsMap)
-		if err != nil {
-			return nil, err
+				path := node.value
+		if path != "stdout" && !filepath.IsAbs(path) {
+			split := strings.Split(path, ",")
+			tagKey := split[0]
+
+			for index, v := range split[1:] {
+
+				tags := fmt.Sprintf("%s=%s", tagKey, v)
+				if node.get("tags") != "" {
+					node.children["tags"].value = fmt.Sprintf("%s,%s", node.children["tags"].value, tags)
+				} else {
+					node.insert([]string{"tags"}, tags)
+				}
+
+				if node.get("target") == "" {
+					node.insert([]string{"target"}, name)
+				}
+				node.value = v
+				logConfig, err := p.parseLogConfig(fmt.Sprintf("%s-%d", name, index), node, jsonLogPath, mountsMap)
+				if err != nil {
+					return nil, err
+				}
+				ret = append(ret, logConfig)
+			}
+		} else {
+			logConfig, err := p.parseLogConfig(name, node, jsonLogPath, mountsMap)
+			if err != nil {
+				return nil, err
+			}
+			ret = append(ret, logConfig)
 		}
-		ret = append(ret, logConfig)
 	}
 	return ret, nil
 }

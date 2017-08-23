@@ -5,12 +5,16 @@ import sys
 import os
 import os.path
 import subprocess
+import logging
 
 base='/host'
 
 def umount(volume):
-    subprocess.check_call('umount %s' % volume, shell=True)
-    #TODO retry
+    try:
+        subprocess.check_call('umount %s' % volume, shell=True)
+        # TODO retry
+    except subprocess.CalledProcessError:
+        logging.info('umount : %s error', volume)
 
 def cleanup():
     with open('/proc/mounts', 'r') as f:

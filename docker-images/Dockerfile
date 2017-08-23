@@ -5,6 +5,8 @@ RUN apk update && apk upgrade && \
   apk add build-base ruby-dev && \
   apk add python && \
   apk add ca-certificates wget && \
+  apk add tzdata && \
+  cat /usr/share/zoneinfo/Asia/Shanghai > /etc/localtime && \
   gem install fluentd -v "~> 0.12.0" --no-ri --no-rdoc && \
   gem install fluent-plugin-elasticsearch --no-ri --no-rdoc && \
   gem install gelf -v "~> 3.0.0" --no-ri --no-rdoc && \

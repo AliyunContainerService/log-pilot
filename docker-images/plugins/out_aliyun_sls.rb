@@ -11,11 +11,13 @@ module Fluent
     config_param :need_create_logstore, :bool, :default => false
     config_param :create_logstore_ttl, :integer, :default => 1
     config_param :create_logstore_shard_count, :integer, :default => 2
+    config_param :need_host_ip, :bool, :default => false
 
     def initialize
       super
       require "aliyun_sls_sdk/protobuf"
       require "aliyun_sls_sdk"
+      require "socket"
       @log_store_created = false
     end
 
@@ -88,7 +90,11 @@ module Fluent
       end
 
       log_list_hash.each do |storeName, logitems|
-        putLogRequest = AliyunSlsSdk::PutLogsRequest.new(@project, storeName, @topic, nil, logitems, nil, true)
+        if @need_host_ip
+          putLogRequest = AliyunSlsSdk::PutLogsRequest.new(@project, storeName, @topic, IPSocket.getaddress(Socket.gethostname), logitems, nil, true)
+        else
+          putLogRequest = AliyunSlsSdk::PutLogsRequest.new(@project, storeName, @topic, nil, logitems, nil, true)
+        end
         retries = 0
         begin
           client.put_logs(putLogRequest)
