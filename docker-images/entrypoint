@@ -13,13 +13,13 @@ def umount(volume):
     #TODO retry
 
 def cleanup():
-    with open('/etc/mtab', 'r') as f:
+    with open('/proc/self/mountinfo', 'r') as f:
         mounts = f.read().decode('utf-8')
     umounts = []
     for line in mounts.split('\n'):
-        ftab = line.split()
-        if len(ftab) > 1 and ftab[1].startswith(base + '/'):
-            umounts.append(ftab[1])
+        mtab = line.split()
+        if len(mtab) > 1 and mtab[4].startswith(base + '/'):
+            umounts.append(mtab[4])
     for volume in sorted(umounts, reverse=True):
         umount(volume)
 

@@ -29,7 +29,9 @@ const ENV_SERVICE_LOGS = "aliyun_logs_"
 const FLUENTD_CONF_HOME = "/etc/fluentd"
 
 const LABEL_PROJECT = "com.docker.compose.project"
+const LABEL_PROJECT_SWARM_MODE = "com.docker.stack.namespace"
 const LABEL_SERVICE = "com.docker.compose.service"
+const LABEL_SERVICE_SWARM_MODE = "com.docker.swarm.service.name"
 const LABEL_POD = "io.kubernetes.pod.name"
 
 type Pilot struct {
@@ -74,6 +76,7 @@ func (p *Pilot) watch() error {
 	ctx := context.Background()
 	filter := filters.NewArgs()
 	filter.Add("type", "container")
+    filter.Add("event", "start")
 
 	options := types.EventsOptions{
 		Filters: filter,
@@ -175,7 +178,9 @@ func container(containerJSON *types.ContainerJSON) map[string]string {
 	labels := containerJSON.Config.Labels
 	c := make(map[string]string)
 	putIfNotEmpty(c, "docker_app", labels[LABEL_PROJECT])
+	putIfNotEmpty(c, "docker_app", labels[LABEL_PROJECT_SWARM_MODE])
 	putIfNotEmpty(c, "docker_service", labels[LABEL_SERVICE])
+	putIfNotEmpty(c, "docker_service", labels[LABEL_SERVICE_SWARM_MODE])
 	putIfNotEmpty(c, "k8s_pod", labels[LABEL_POD])
 	putIfNotEmpty(c, "docker_container", strings.TrimPrefix(containerJSON.Name, "/"))
 	extension(c, containerJSON)
