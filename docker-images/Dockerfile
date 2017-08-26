@@ -4,6 +4,7 @@ RUN apk update && apk upgrade && \
   apk add ruby-json ruby-irb && \
   apk add build-base ruby-dev && \
   apk add python && \
+  apk add losf && \
   apk add ca-certificates wget && \
   gem install fluentd -v "~> 0.12.0" --no-ri --no-rdoc && \
   gem install fluent-plugin-elasticsearch --no-ri --no-rdoc && \
