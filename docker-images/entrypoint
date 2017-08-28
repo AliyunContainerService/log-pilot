@@ -11,8 +11,7 @@ import time
 base='/host'
 
 def umount(volume):
-    subprocess.check_call('umount %s' % volume, shell=True)
-    #TODO retry
+    subprocess.check_call('umount -l %s' % volume, shell=True) 
 
 def mount_points():
     with open('/proc/self/mountinfo', 'r') as f:
