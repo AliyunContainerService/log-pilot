@@ -73,8 +73,6 @@ EOF
 }
 
 aliyun_sls(){
-
-
 if [ -f "/run/secrets/aliyun_access_key" ];then
 ALIYUNSLS_ACCESS_KEY_ID=$(cat /run/secrets/aliyun_access_key | awk -F":" '{ print $1 }')
 ALIYUNSLS_ACCESS_KEY_SECRET=$(cat /run/secrets/aliyun_access_key | awk -F":" '{ print $2 }')
@@ -100,7 +98,22 @@ create_logstore_shard_count ${ALIYUNSLS_CREATE_LOGSTORE_SHARD_COUNT:-2}
 flush_interval 3s
 </match>
 EOF
+}
 
+syslog(){
+assert_not_empty "$SYSLOG_HOST" "SYSLOG_HOST required"
+assert_not_empty "$SYSLOG_PORT" "SYSLOG_PORT required"
+
+cat >> $FLUENTD_CONFIG << EOF
+<match docker.**>
+@type remote_syslog
+host $SYSLOG_HOST
+port $SYSLOG_PORT
+${SYSLOG_FACILITY:+facility ${SYSLOG_FACILITY}}
+${SYSLOG_SEVERITY:+facility ${SYSLOG_SEVERITY}}
+tag ${SYSLOG_TAG:-fluentd-pilot}
+</match>
+EOF
 }
 
 case "$FLUENTD_OUTPUT" in
@@ -112,6 +125,8 @@ case "$FLUENTD_OUTPUT" in
         aliyun_sls;;
     file)
         file;;
+    syslog)
+        syslog;;
     *)
         default
 esac
