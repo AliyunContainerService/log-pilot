@@ -5,12 +5,17 @@ import sys
 import os
 import os.path
 import subprocess
+import re
 
-base='/host'
+base = '/host'
 
 def umount(volume):
-    subprocess.check_call('umount %s' % volume, shell=True)
-    #TODO retry
+    try:
+        logging.info('umount : %s', volume)
+        subprocess.check_call('umount %s' % volume, shell=True)
+        # TODO retry
+    except subprocess.CalledProcessError:
+        logging.info('umount : %s error', volume)
 
 def cleanup():
     with open('/proc/mounts', 'r') as f:
@@ -18,13 +23,13 @@ def cleanup():
     umounts = []
     for line in mounts.split('\n'):
         ftab = line.split()
-        if len(ftab) > 1 and ftab[1].startswith(base + '/'):
-            umounts.append(ftab[1])
+    if len(ftab) > 1 and (re.search(".*/containers/([0-9A-Za-z]{64})/shm", ftab[1]) or re.search(".*/aufs/mnt/([0-9A-Za-z]{64})", ftab[1])):
+        umounts.append(ftab[1])
     for volume in sorted(umounts, reverse=True):
         umount(volume)
 
 def run():
-    os.execve('/pilot/pilot', ['/pilot/pilot', '-template', '/pilot/fluentd.tpl','-base', base, '-log-level', 'debug' ], os.environ)
+    os.execve('/pilot/pilot', ['/pilot/pilot', '-template', '/pilot/fluentd.tpl', '-base', base, '-log-level', 'debug'], os.environ)
 
 def config():
     subprocess.check_call(['/pilot/config.default'])
