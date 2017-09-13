@@ -19,7 +19,7 @@ def mount_points():
     points = set()
     for line in mounts.split('\n'):
         mtab = line.split()
-        if len(mtab) > 1 and mtab[4].startswith(base + '/'):
+        if len(mtab) > 1 and mtab[4].startswith(base + '/') and mtab[4].endswith('shm') and 'containers' in mtab[4]:
             points.add(mtab[4])
     return points
 
