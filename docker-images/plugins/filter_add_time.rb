@@ -14,9 +14,10 @@ class Fluent::AddTimeFilter < Fluent::Filter
   end
 
   def filter(tag, time, record)
-	if record.nil? 
-		return
-	end
+    if record.nil?
+      return
+    end
+
     record[@time_key] = Time.now.strftime '%Y-%m-%dT%H:%M:%S.%L'
     return record
   end

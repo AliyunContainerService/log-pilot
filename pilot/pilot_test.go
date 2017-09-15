@@ -1,11 +1,12 @@
 package pilot
 
 import (
+	"os"
+	"testing"
+
 	"github.com/docker/docker/api/types"
 	log "github.com/sirupsen/logrus"
 	check "gopkg.in/check.v1"
-	"os"
-	"testing"
 )
 
 func Test(t *testing.T) {

@@ -19,6 +19,14 @@
 time_key {{ .TimeKey}}
 </filter>
 
+{{if .JsonParserConfig}}
+<filter docker.{{ $.containerId }}.{{ .Name }}>
+@type contians_log_json_parser
+{{range $key, $value := .JsonParserConfig}}
+{{ $key }} {{ $value }}
+{{end}}
+</filter>
+{{end}}
 
 <filter docker.{{ $.containerId }}.{{ .Name }}>
 @type record_transformer

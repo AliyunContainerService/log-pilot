@@ -67,3 +67,4 @@ There are many labels you can use to describe the log info.
 - `aliyun.logs.$name.target=target-for-log-storage`: target is used by the output plugins, instruct the plugins to store
 logs in appropriate place. For elasticsearch output, target means the log index in elasticsearch. For aliyun_sls output,
 target means the logstore in aliyun sls. The default value of target is the log name.
+- `aliyun.logs.$name.jsonkey=log`: work when `aliyun.logs.$name=stdout`. can loads json from docker container log like `{"log":"{\"foo\": \"bar\"}","stream":"stdout","time":"2017-09-15T16:28:29.253264378Z"}`.
