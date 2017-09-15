@@ -3,12 +3,6 @@ package pilot
 import (
 	"bytes"
 	"fmt"
-	log "github.com/Sirupsen/logrus"
-	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/api/types/events"
-	"github.com/docker/docker/api/types/filters"
-	"github.com/docker/docker/client"
-	"golang.org/x/net/context"
 	"io"
 	"io/ioutil"
 	"os"
@@ -17,6 +11,13 @@ import (
 	"strings"
 	"sync"
 	"text/template"
+
+	log "github.com/Sirupsen/logrus"
+	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/events"
+	"github.com/docker/docker/api/types/filters"
+	"github.com/docker/docker/client"
+	"golang.org/x/net/context"
 )
 
 /**
@@ -26,6 +27,7 @@ aliyun.log: /var/log/hello.log[:json][;/var/log/abc/def.log[:txt]]
 
 const LABEL_SERVICE_LOGS = "aliyun.logs."
 const ENV_SERVICE_LOGS = "aliyun_logs_"
+const ENV_JSON_IN_LOG = "json_in_log"
 const FLUENTD_CONF_HOME = "/etc/fluentd"
 
 const LABEL_PROJECT = "com.docker.compose.project"
@@ -76,7 +78,7 @@ func (p *Pilot) watch() error {
 	ctx := context.Background()
 	filter := filters.NewArgs()
 	filter.Add("type", "container")
-    filter.Add("event", "start")
+	filter.Add("event", "start")
 
 	options := types.EventsOptions{
 		Filters: filter,
@@ -100,15 +102,16 @@ func (p *Pilot) watch() error {
 }
 
 type LogConfig struct {
-	Name         string
-	HostDir      string
-	ContainerDir string
-	Format       string
-	FormatConfig map[string]string
-	File         string
-	Tags         map[string]string
-	Target       string
-	TimeKey      string
+	Name             string
+	HostDir          string
+	ContainerDir     string
+	Format           string
+	FormatConfig     map[string]string
+	File             string
+	Tags             map[string]string
+	Target           string
+	TimeKey          string
+	JsonParserConfig map[string]string
 }
 
 func (p *Pilot) cleanConfigs() error {
@@ -219,7 +222,6 @@ func (p *Pilot) newContainer(containerJSON *types.ContainerJSON) error {
 			labelKey := strings.Replace(envLabel[0], "_", ".", -1)
 			labels[labelKey] = envLabel[1]
 		}
-
 	}
 
 	logConfigs, err := p.getLogConfigs(jsonLogPath, mounts, labels)
@@ -356,16 +358,23 @@ func (p *Pilot) parseLogConfig(name string, info *LogInfoNode, jsonLogPath strin
 		timeKey = "@timestamp"
 	}
 
+	jsonParserConfig := map[string]string{}
+	jsonKey := info.get("jsonkey")
+	if jsonKey != "" {
+		jsonParserConfig = map[string]string{"jsonkey": jsonKey}
+	}
+
 	if path == "stdout" {
 		return &LogConfig{
-			Name:         name,
-			HostDir:      filepath.Join(p.base, filepath.Dir(jsonLogPath)),
-			Format:       "json",
-			File:         filepath.Base(jsonLogPath),
-			Tags:         tagMap,
-			FormatConfig: map[string]string{"time_format": "%Y-%m-%dT%H:%M:%S.%NZ"},
-			Target:       target,
-			TimeKey:      timeKey,
+			Name:             name,
+			HostDir:          filepath.Join(p.base, filepath.Dir(jsonLogPath)),
+			Format:           "json",
+			File:             filepath.Base(jsonLogPath),
+			Tags:             tagMap,
+			FormatConfig:     map[string]string{"time_format": "%Y-%m-%dT%H:%M:%S.%NZ"},
+			Target:           target,
+			TimeKey:          timeKey,
+			JsonParserConfig: jsonParserConfig,
 		}, nil
 	}
 
