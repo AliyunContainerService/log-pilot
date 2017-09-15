@@ -116,6 +116,34 @@ tag ${SYSLOG_TAG:-fluentd-pilot}
 EOF
 }
 
+kafka(){
+assert_not_empty "$KAFKA_BROKERS" "KAFKA_BROKERS required"
+assert_not_empty "$KAFKA_TOPICS" "KAFKA_TOPICS required"
+cat >> $FLUENTD_CONFIG << EOF
+<match docker.**>
+@type kafka_buffered
+brokers $KAFKA_BROKERS
+${KAFKA_DEFAULT_TOPIC:+default_topic $KAFKA_DEFAULT_TOPIC}
+${KAFKA_DEFAULT_PARTITION_KEY:+default_partition_key $KAFKA_default_partition_key}
+${KAFKA_DEFAULT_MESSAGE_KEY:+default_message_key $KAFKA_default_message_key}
+${KAFKA_OUTPUT_DATA_TYPE:+output_data_type $KAFKA_OUTPUT_DATA_TYPE}
+${KAFKA_OUTPUT_INCLUDE_TAG:+output_include_tag $KAFKA_OUTPUT_INCLUDE_TAG}
+${KAFKA_OUTPUT_INCLUDE_TIME:+output_include_time $KAFKA_OUTPUT_INCLUDE_TIME}
+${KAFKA_EXCLUDE_TOPIC_KEY:+exclude_topic_key $KAFKA_EXCLUDE_TOPIC_KEY}
+${KAFKA_EXCLUDE_PARTITION_KEY:+exclude_partition_key $KAFKA_EXCLUDE_PARTITION_KEY}
+${KAFKA_GET_KAFKA_CLIENT_LOG:+get_kafka_client_log $KAFKA_GET_KAFKA_CLIENT_LOG}
+${KAFKA_MAX_SEND_RETRIES:+max_send_retries $KAFKA_MAX_SEND_RETRIES}
+${KAFKA_REQUIRED_ACKS:+required_acks $KAFKA_REQUIRED_ACKS}
+${KAFKA_ACK_TIMEOUT:+ack_timeout $KAFKA_ACK_TIMEOUT}
+${KAFKA_COMPRESSION_CODEC:+compression_codec $KAFKA_COMPRESSION_CODEC}
+${KAFKA_KAFKA_AGG_MAX_BYTES:+kafka_agg_max_bytes $KAFKA_KAFKA_AGG_MAX_BYTES}
+${KAFKA_KAFKA_AGG_MAX_MESSAGES:+kafka_agg_max_messages $KAFKA_KAFKA_AGG_MAX_MESSAGES}
+${KAFKA_MAX_SEND_LIMIT_BYTES:+max_send_limit_bytes $KAFKA_MAX_SEND_LIMIT_BYTES}
+${KAFKA_DISCARD_KAFKA_DELIVERY_FAILED:+discard_kafka_delivery_failed $KAFKA_DISCARD_KAFKA_DELIVERY_FAILED}
+</match>
+EOF
+}
+
 case "$FLUENTD_OUTPUT" in
     elasticsearch)
         es;;
@@ -127,6 +155,8 @@ case "$FLUENTD_OUTPUT" in
         file;;
     syslog)
         syslog;;
+    kafka)
+        kafka;;
     *)
         default
 esac
