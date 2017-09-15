@@ -3,12 +3,6 @@ package pilot
 import (
 	"bytes"
 	"fmt"
-	log "github.com/Sirupsen/logrus"
-	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/api/types/events"
-	"github.com/docker/docker/api/types/filters"
-	"github.com/docker/docker/client"
-	"golang.org/x/net/context"
 	"io"
 	"io/ioutil"
 	"os"
@@ -17,6 +11,13 @@ import (
 	"strings"
 	"sync"
 	"text/template"
+
+	log "github.com/Sirupsen/logrus"
+	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/events"
+	"github.com/docker/docker/api/types/filters"
+	"github.com/docker/docker/client"
+	"golang.org/x/net/context"
 )
 
 /**
@@ -76,7 +77,7 @@ func (p *Pilot) watch() error {
 	ctx := context.Background()
 	filter := filters.NewArgs()
 	filter.Add("type", "container")
-    filter.Add("event", "start")
+	filter.Add("event", "start")
 
 	options := types.EventsOptions{
 		Filters: filter,
@@ -351,7 +352,7 @@ func (p *Pilot) parseLogConfig(name string, info *LogInfoNode, jsonLogPath strin
 
 	target := info.get("target")
 
-	timeKey := info.get("time_key")
+	timeKey := info.get("timekey")
 	if timeKey == "" {
 		timeKey = "@timestamp"
 	}
