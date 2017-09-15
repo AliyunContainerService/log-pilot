@@ -27,7 +27,6 @@ aliyun.log: /var/log/hello.log[:json][;/var/log/abc/def.log[:txt]]
 
 const LABEL_SERVICE_LOGS = "aliyun.logs."
 const ENV_SERVICE_LOGS = "aliyun_logs_"
-const ENV_JSON_IN_LOG = "json_in_log"
 const FLUENTD_CONF_HOME = "/etc/fluentd"
 
 const LABEL_PROJECT = "com.docker.compose.project"
