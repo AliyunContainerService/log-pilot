@@ -17,6 +17,7 @@ import (
 	"strings"
 	"sync"
 	"text/template"
+	"time"
 )
 
 /**
@@ -76,7 +77,7 @@ func (p *Pilot) watch() error {
 	ctx := context.Background()
 	filter := filters.NewArgs()
 	filter.Add("type", "container")
-    filter.Add("event", "start")
+	filter.Add("event", "start")
 
 	options := types.EventsOptions{
 		Filters: filter,
@@ -201,11 +202,11 @@ func (p *Pilot) newContainer(containerJSON *types.ContainerJSON) error {
 
 	//logConfig.containerDir match types.mountPoint
 	/**
-	场景：
-	1. 容器一个路径，中间有多级目录对应宿主机不同的目录
-	2. containerdir对应的目录不是直接挂载的，挂载的是它上级的目录
+	  场景：
+	  1. 容器一个路径，中间有多级目录对应宿主机不同的目录
+	  2. containerdir对应的目录不是直接挂载的，挂载的是它上级的目录
 
-	查找：从containerdir开始查找最近的一层挂载
+	  查找：从containerdir开始查找最近的一层挂载
 	*/
 
 	container := container(containerJSON)
@@ -257,13 +258,15 @@ func (p *Pilot) pathOf(container string) string {
 	return fmt.Sprintf("%s/conf.d/%s.conf", FLUENTD_CONF_HOME, container)
 }
 
-func (p *Pilot) delContainer(id string) error {
-	log.Infof("Try remove config %s", id)
-	if err := os.Remove(p.pathOf(id)); err != nil {
-		return err
+func (p *Pilot) delContainer(id string) func() {
+	return func() {
+		log.Infof("Try remove config %s", id)
+		if err := os.Remove(p.pathOf(id)); err != nil {
+			log.Errorf("%s is already exists.", id)
+			return
+		}
+		p.tryReload()
 	}
-	p.tryReload()
-	return nil
 }
 
 func (p *Pilot) client() *client.Client {
@@ -287,7 +290,7 @@ func (p *Pilot) processEvent(msg events.Message) error {
 		return p.newContainer(&containerJSON)
 	case "destroy":
 		log.Debugf("Process container destory event: %s", containerId)
-		p.delContainer(containerId)
+		time.AfterFunc(15*time.Second, p.delContainer(containerId))
 	}
 	return nil
 }
