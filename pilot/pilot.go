@@ -77,7 +77,6 @@ func (p *Pilot) watch() error {
 	ctx := context.Background()
 	filter := filters.NewArgs()
 	filter.Add("type", "container")
-	filter.Add("event", "start")
 
 	options := types.EventsOptions{
 		Filters: filter,
