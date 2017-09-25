@@ -118,7 +118,6 @@ EOF
 
 kafka(){
 assert_not_empty "$KAFKA_BROKERS" "KAFKA_BROKERS required"
-assert_not_empty "$KAFKA_TOPICS" "KAFKA_TOPICS required"
 cat >> $FLUENTD_CONFIG << EOF
 <match docker.**>
 @type kafka_buffered
