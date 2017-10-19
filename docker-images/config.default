@@ -14,13 +14,32 @@ assert_not_empty(){
     fi
 }
 
+if [ -f "$FLUENTD_CONFIG" ]; then
+    exit
+fi
+
 mkdir -p /etc/fluentd
 echo "@include conf.d/*.conf" >> $FLUENTD_CONFIG
+
+
+bufferd_output(){
+cat << EOF
+${FLUENTD_BUFFER_TYPE:+buffer_type $FLUENTD_BUFFER_TYPE}
+${FLUENTD_BUFFER_CHUNK_LIMIT:+buffer_chunk_limit $FLUENTD_BUFFER_CHUNK_LIMIT}
+${FLUENTD_BUFFER_QUEUE_LIMIT:+buffer_queue_limit $FLUENTD_BUFFER_QUEUE_LIMIT}
+${FLUENTD_FLUSH_INTERVAL:+flush_interval $FLUENTD_FLUSH_INTERVAL}
+${FLUENTD_DISABLE_RETRY_LIMIT:+disable_retry_limit $FLUENTD_DISABLE_RETRY_LIMIT}
+${FLUENTD_RETRY_LIMIT:+retry_limit $FLUENTD_RETRY_LIMIT}
+${FLUENTD_RETRY_WAIT:+retry_wait $FLUENTD_RETRY_WAIT}
+${FLUENTD_MAX_RETRY_WAIT:+max_retry_wait $FLUENTD_MAX_RETRY_WAIT}
+${FLUENTD_NUM_THREADS:+num_threads $FLUENTD_NUM_THREADS}
+${FLUENTD_FLUSH_AT_SHUTDOWN:+flush_at_shutdown $FLUENTD_FLUSH_AT_SHUTDOWN}
+EOF
+}
 
 es(){
 assert_not_empty "$ELASTICSEARCH_HOST" "ELASTICSEARCH_HOST required"
 assert_not_empty "$ELASTICSEARCH_PORT" "ELASTICSEARCH_PORT required"
-
 cat >> $FLUENTD_CONFIG << EOF
 <match docker.**>
 @type elasticsearch
@@ -32,9 +51,8 @@ ${ELASTICSEARCH_PATH:+path ${ELASTICSEARCH_PATH}}
 ${ELASTICSEARCH_SCHEME:+scheme ${ELASTICSEARCH_SCHEME}}
 ${ELASTICSEARCH_SSL_VERIFY:+ssl_verify ${ELASTICSEARCH_SSL_VERIFY}}
 target_index_key @target
-index_name _default_index
-flush_interval 3
 type_name fluentd
+$(bufferd_output)
 </match>
 EOF
 }
@@ -94,8 +112,7 @@ ssl_verify           ${SSL_VERIFY:-false}
 need_create_logstore ${ALIYUNSLS_NEED_CREATE_LOGSTORE:-false}
 create_logstore_ttl  ${ALIYUNSLS_CREATE_LOGSTORE_TTL:-1}
 create_logstore_shard_count ${ALIYUNSLS_CREATE_LOGSTORE_SHARD_COUNT:-2}
-
-flush_interval 3s
+$(bufferd_output)
 </match>
 EOF
 }
@@ -139,6 +156,7 @@ ${KAFKA_KAFKA_AGG_MAX_BYTES:+kafka_agg_max_bytes $KAFKA_KAFKA_AGG_MAX_BYTES}
 ${KAFKA_KAFKA_AGG_MAX_MESSAGES:+kafka_agg_max_messages $KAFKA_KAFKA_AGG_MAX_MESSAGES}
 ${KAFKA_MAX_SEND_LIMIT_BYTES:+max_send_limit_bytes $KAFKA_MAX_SEND_LIMIT_BYTES}
 ${KAFKA_DISCARD_KAFKA_DELIVERY_FAILED:+discard_kafka_delivery_failed $KAFKA_DISCARD_KAFKA_DELIVERY_FAILED}
+$(bufferd_output)
 </match>
 EOF
 }
