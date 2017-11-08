@@ -7,11 +7,15 @@ import os.path
 import subprocess
 import traceback
 import time
+import traceback
 
 base='/host'
 
 def umount(volume):
-    subprocess.check_call('umount -l %s' % volume, shell=True) 
+    try:
+        subprocess.check_call('umount -l %s' % volume, shell=True)
+    except:
+        traceback.print_exc()
 
 def mount_points():
     with open('/proc/self/mountinfo', 'r') as f:
