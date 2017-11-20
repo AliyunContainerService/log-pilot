@@ -40,7 +40,8 @@ type Pilot struct {
 	tpl          *template.Template
 	base         string
 	dockerClient *client.Client
-	reloadable   bool
+	reloadChan   chan bool
+	lastReload   time.Time
 }
 
 func New(tplStr string, baseDir string) (*Pilot, error) {
@@ -62,17 +63,19 @@ func New(tplStr string, baseDir string) (*Pilot, error) {
 		dockerClient: client,
 		tpl:          tpl,
 		base:         baseDir,
+		reloadChan:   make(chan bool),
 	}, nil
 }
 
 func (p *Pilot) watch() error {
 
-	p.reloadable = false
 	if err := p.processAllContainers(); err != nil {
 		return err
 	}
 	StartFluentd()
-	p.reloadable = true
+	p.lastReload = time.Now()
+
+	go p.doReload()
 
 	ctx := context.Background()
 	filter := filters.NewArgs()
@@ -143,7 +146,7 @@ func (p *Pilot) processAllContainers() error {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 
-	opts := types.ContainerListOptions{All: true}
+	opts := types.ContainerListOptions{}
 	containers, err := p.client().ContainerList(context.Background(), opts)
 	if err != nil {
 		return err
@@ -248,8 +251,18 @@ func (p *Pilot) newContainer(containerJSON *types.ContainerJSON) error {
 }
 
 func (p *Pilot) tryReload() {
-	if p.reloadable {
-		ReloadFluentd()
+	select {
+	case p.reloadChan <- true:
+	default:
+		log.Info("Another load is pending")
+	}
+}
+
+func (p *Pilot) doReload() {
+	log.Info("Reload gorouting is ready")
+	for {
+		<-p.reloadChan
+		p.reload()
 	}
 }
 
@@ -276,7 +289,7 @@ func (p *Pilot) processEvent(msg events.Message) error {
 	containerId := msg.Actor.ID
 	ctx := context.Background()
 	switch msg.Action {
-	case "start":
+	case "start", "restart":
 		log.Debugf("Process container start event: %s", containerId)
 		if p.exists(containerId) {
 			log.Debugf("%s is already exists.", containerId)
@@ -289,7 +302,7 @@ func (p *Pilot) processEvent(msg events.Message) error {
 		return p.newContainer(&containerJSON)
 	case "destroy":
 		log.Debugf("Process container destory event: %s", containerId)
-		time.AfterFunc(15*time.Second, p.delContainer(containerId))
+		time.AfterFunc(15*time.Minute, p.delContainer(containerId))
 	}
 	return nil
 }
@@ -510,8 +523,15 @@ func (p *Pilot) render(containerId string, container map[string]string, configLi
 }
 
 func (p *Pilot) reload() error {
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
 	log.Info("Reload fluentd")
-	return ReloadFluentd()
+	interval := time.Now().Sub(p.lastReload)
+	time.Sleep(30*time.Second - interval)
+	log.Info("Start reloading")
+	err := ReloadFluentd()
+	p.lastReload = time.Now()
+	return err
 }
 
 func Run(tpl string, baseDir string) error {

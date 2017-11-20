@@ -10,8 +10,7 @@
 {{ $key }} {{ $value }}
 {{end}}
 {{end}}
-  pos_file /pilot/pos/fluentd.pos
-  refresh_interval 1
+  pos_file /pilot/pos/{{ $.containerId }}.{{ .Name }}.pos
 </source>
 
 <filter docker.{{ $.containerId }}.{{ .Name }}>
