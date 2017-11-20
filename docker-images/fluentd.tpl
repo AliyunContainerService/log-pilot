@@ -4,6 +4,7 @@
   tag docker.{{ $.containerId }}.{{ .Name }}
   path {{ .HostDir }}/{{ .File }}
   format {{ .Format }}
+  read_from_head true
 
 {{if .FormatConfig}}
 {{range $key, $value := .FormatConfig}}
