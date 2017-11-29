@@ -242,7 +242,7 @@ func (p *Pilot) newContainer(containerJSON *types.ContainerJSON) error {
 		return err
 	}
 	//TODO validate config before save
-	//log.Infof("Save %s to %s", fluentdConfig, p.pathOf(id))
+	log.Infof("container %s fluentd config: %s", id, fluentdConfig)
 	if err = ioutil.WriteFile(p.pathOf(id), []byte(fluentdConfig), os.FileMode(0644)); err != nil {
 		return err
 	}
@@ -508,9 +508,11 @@ func (p *Pilot) exists(containId string) bool {
 }
 
 func (p *Pilot) render(containerId string, container map[string]string, configList []*LogConfig) (string, error) {
-	log.Infof("logs: %v", configList)
-	var buf bytes.Buffer
+	for _, config := range configList {
+		log.Infof("logs: %s = %v", containerId, config)
+	}
 
+	var buf bytes.Buffer
 	context := map[string]interface{}{
 		"containerId": containerId,
 		"configList":  configList,
