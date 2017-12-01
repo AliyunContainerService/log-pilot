@@ -88,29 +88,31 @@ module Fluent
       end
 
       log_list_hash.each do |storeName, logitems|
-        putLogRequest = AliyunSlsSdk::PutLogsRequest.new(@project, storeName, @topic, nil, logitems, nil, true)
-        retries = 0
-        begin
-          client.put_logs(putLogRequest)
-        rescue  => e
-          if e.instance_of?(AliyunSlsSdk::LogException) && e.errorCode == "LogStoreNotExist" && @need_create_logstore
-            createLogStore(storeName)
-            # wait up to 60 seconds to create the logstore
-            if retries < 3
-              retries += 1
-              sleep(10 * retries)
-              retry
+        logitems.each_slice(4096) do |items|
+          putLogRequest = AliyunSlsSdk::PutLogsRequest.new(@project, storeName, @topic, nil, items, nil, true)
+          retries = 0
+          begin
+            client.put_logs(putLogRequest)
+          rescue  => e
+            if e.instance_of?(AliyunSlsSdk::LogException) && e.errorCode == "LogStoreNotExist" && @need_create_logstore
+              createLogStore(storeName)
+              # wait up to 60 seconds to create the logstore
+              if retries < 3
+                retries += 1
+                sleep(10 * retries)
+                retry
+              end
+            else
+              log.warn "\tCaught in puts logs: #{e.message}"
+              if retries < 3
+                client.http.shutdown
+                @_sls_con = nil
+                retries += 1
+                sleep(1 * retries)
+                retry
+              end
+              log.error "Could not puts logs to aliyun sls: #{e.message}"
             end
-          else
-            log.warn "\tCaught in puts logs: #{e.message}"
-            if retries < 3
-              client.http.shutdown
-              @_sls_con = nil
-              retries += 1
-              sleep(1 * retries)
-              retry
-            end
-            log.error "Could not puts logs to aliyun sls: #{e.message}"
           end
         end
       end
