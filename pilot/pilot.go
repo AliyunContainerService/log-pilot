@@ -514,9 +514,10 @@ func (p *Pilot) render(containerId string, container map[string]string, configLi
 
 	var buf bytes.Buffer
 	context := map[string]interface{}{
-		"containerId": containerId,
-		"configList":  configList,
-		"container":   container,
+		"containerId":   containerId,
+		"configList":    configList,
+		"container":     container,
+		"fluentdOutput": os.Getenv("FLUENTD_OUTPUT"),
 	}
 	if err := p.tpl.Execute(&buf, context); err != nil {
 		return "", err
