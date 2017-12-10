@@ -38,6 +38,10 @@ EOF
 }
 
 es(){
+if [ -f "/run/secrets/es_credential" ];then
+ELASTICSEARCH_USER=$(cat /run/secrets/es_credential | awk -F":" '{ print $1 }')
+ELASTICSEARCH_PASSWORD=$(cat /run/secrets/es_credential | awk -F":" '{ print $2 }')
+fi
 assert_not_empty "$ELASTICSEARCH_HOST" "ELASTICSEARCH_HOST required"
 assert_not_empty "$ELASTICSEARCH_PORT" "ELASTICSEARCH_PORT required"
 cat >> $FLUENTD_CONFIG << EOF
