@@ -1,0 +1,7 @@
+busybox:
+  image: busybox
+  restart: always
+  labels:
+    aliyun.logs.busybox: stdout
+    aliyun.logs.busybox.tags: app=busybox,stage=test
+  command: ['ping', 'localhost']

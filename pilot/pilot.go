@@ -72,9 +72,13 @@ func (p *Pilot) watch() error {
 	if err := p.processAllContainers(); err != nil {
 		return err
 	}
-	StartFluentd()
-	p.lastReload = time.Now()
 
+	err := StartFluentd()
+	if err != nil && ERR_ALREADY_STARTED != err.Error() {
+		return err
+	}
+
+	p.lastReload = time.Now()
 	go p.doReload()
 
 	ctx := context.Background()
@@ -242,7 +246,7 @@ func (p *Pilot) newContainer(containerJSON *types.ContainerJSON) error {
 		return err
 	}
 	//TODO validate config before save
-	log.Infof("container %s fluentd config: %s", id, fluentdConfig)
+	//log.Debugf("container %s fluentd config: %s", id, fluentdConfig)
 	if err = ioutil.WriteFile(p.pathOf(id), []byte(fluentdConfig), os.FileMode(0644)); err != nil {
 		return err
 	}

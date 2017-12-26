@@ -1,0 +1,12 @@
+version: '2'
+services:
+  pilot:
+    image: pilot:latest
+    privileged: true
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /etc/localtime:/etc/localtime
+      - /:/host
+    environment:
+      FLUENTD_OUTPUT: file
+      FILE_PATH: /host/tmp/logs
