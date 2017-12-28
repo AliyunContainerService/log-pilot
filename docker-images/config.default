@@ -82,13 +82,13 @@ assert_not_empty "$FILE_PATH" "FILE_PATH required"
 cat >> $FLUENTD_CONFIG << EOF
 <match docker.**>
 @type file
-path $FILE_PATH/\${tag[1]}/\${tag[2]}.%Y-%m-%d.%H%M
+path $FILE_PATH/\${docker_app}/\${docker_service}/\${docker_container}/\${tag[2]}.%Y-%m-%d.%H%M
 append ${FILE_APPEND:=true}
 ${FILE_COMPRESS:+compress ${FILE_COMPRESS}}
 <format>
   @type ${FILE_FORMAT:=json}
 </format>
-<buffer tag,time>
+<buffer tag,time,docker_app,docker_service,docker_container>
   @type ${FILE_BUFFER_TYPE:=file}
   path $FILE_PATH/.buffer
   timekey ${FILE_BUFFER_TIME_KEY:=1m}
