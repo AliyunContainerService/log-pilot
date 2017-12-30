@@ -18,6 +18,8 @@ import (
 	"sync"
 	"text/template"
 	"time"
+	"path"
+	"github.com/docker/docker/api/types/mount"
 )
 
 /**
@@ -28,6 +30,7 @@ aliyun.log: /var/log/hello.log[:json][;/var/log/abc/def.log[:txt]]
 const LABEL_SERVICE_LOGS = "aliyun.logs."
 const ENV_SERVICE_LOGS = "aliyun_logs_"
 const FLUENTD_CONF_HOME = "/etc/fluentd"
+const SYMLINK_LOGS_BASE = "/acs/log/"
 
 const LABEL_PROJECT = "com.docker.compose.project"
 const LABEL_PROJECT_SWARM_MODE = "com.docker.stack.namespace"
@@ -161,7 +164,11 @@ func (p *Pilot) processAllContainers() error {
 		return err
 	}
 
+	containerIDs := make(map[string]string, 0)
 	for _, c := range containers {
+		if _, ok := containerIDs[c.ID]; !ok {
+			containerIDs[c.ID] = c.ID
+		}
 		if c.State == "removing" {
 			continue
 		}
@@ -173,8 +180,61 @@ func (p *Pilot) processAllContainers() error {
 			log.Errorf("fail to process container %s: %v", containerJSON.Name, err)
 		}
 	}
+	return p.processAllVolumeSymlink(containerIDs)
+}
 
+func (p *Pilot) processAllVolumeSymlink(existingContainerIDs map[string]string) error {
+	symlinkContainerIDs := p.listAllSymlinkContainer()
+	for containerID := range symlinkContainerIDs {
+		if _, ok := existingContainerIDs[containerID]; !ok {
+			p.removeVolumeSymlink(containerID)
+		}
+	}
 	return nil
+}
+
+func (p *Pilot) listAllSymlinkContainer() map[string]string {
+	containerIDs := make(map[string]string, 0)
+	linkBaseDir := path.Join(p.base, SYMLINK_LOGS_BASE)
+	if _, err := os.Stat(linkBaseDir); err != nil && os.IsNotExist(err) {
+		return containerIDs
+	}
+
+	projects := listSubDirectory(linkBaseDir)
+	for _, project := range projects {
+		projectPath := path.Join(linkBaseDir, project)
+		services := listSubDirectory(projectPath)
+		for _, service := range services {
+			servicePath := path.Join(projectPath, service)
+			containers := listSubDirectory(servicePath)
+			for _, containerID := range containers {
+				if _, ok := containerIDs[containerID]; !ok {
+					containerIDs[containerID] = containerID
+				}
+			}
+		}
+	}
+	return containerIDs
+}
+
+func listSubDirectory(path string) []string {
+	subdirs := make([]string, 0)
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return subdirs
+	}
+
+	files, err := ioutil.ReadDir(path)
+	if err != nil {
+		log.Warnf("read %s error: %v", path, err)
+		return subdirs
+	}
+
+	for _, file := range files {
+		if file.IsDir() {
+			subdirs = append(subdirs, file.Name())
+		}
+	}
+	return subdirs
 }
 
 func putIfNotEmpty(store map[string]string, key, value string) {
@@ -239,6 +299,9 @@ func (p *Pilot) newContainer(containerJSON *types.ContainerJSON) error {
 		return nil
 	}
 
+	// create symlink
+	p.createVolumeSymlink(containerJSON)
+
 	//pilot.findMounts(logConfigs, jsonLogPath, mounts)
 	//生成配置
 	fluentdConfig, err := p.render(id, container, logConfigs)
@@ -277,6 +340,7 @@ func (p *Pilot) pathOf(container string) string {
 func (p *Pilot) delContainer(id string) func() {
 	return func() {
 		log.Infof("Try remove config %s", id)
+		p.removeVolumeSymlink(id)
 		if err := os.Remove(p.pathOf(id)); err != nil {
 			log.Errorf("%s is already exists.", id)
 			return
@@ -539,6 +603,69 @@ func (p *Pilot) reload() error {
 	err := ReloadFluentd()
 	p.lastReload = time.Now()
 	return err
+}
+
+func (p *Pilot) createVolumeSymlink(containerJSON *types.ContainerJSON) error {
+	linkBaseDir := path.Join(p.base, SYMLINK_LOGS_BASE)
+	if _, err := os.Stat(linkBaseDir); err != nil && os.IsNotExist(err) {
+		if err := os.MkdirAll(linkBaseDir, 0777); err != nil {
+			log.Errorf("create %s error: %v", linkBaseDir, err)
+		}
+	}
+
+	applicationInfo := container(containerJSON)
+	containerLinkBaseDir := path.Join(linkBaseDir, applicationInfo["docker_app"],
+		applicationInfo["docker_service"], containerJSON.ID)
+	symlinks := make(map[string]string, 0)
+	for _, mountPoint := range containerJSON.Mounts {
+		if mountPoint.Type != mount.TypeVolume {
+			continue
+		}
+
+		volume, err := p.client().VolumeInspect(context.Background(), mountPoint.Name)
+		if err != nil {
+			log.Errorf("inspect volume %s error: %v", mountPoint.Name, err)
+			continue
+		}
+
+		symlink := path.Join(containerLinkBaseDir, volume.Name)
+		if _, ok := symlinks[volume.Mountpoint]; !ok {
+			symlinks[volume.Mountpoint] = symlink
+		}
+	}
+
+	if len(symlinks) == 0 {
+		return nil
+	}
+
+	if _, err := os.Stat(containerLinkBaseDir); err != nil && os.IsNotExist(err) {
+		if err := os.MkdirAll(containerLinkBaseDir, 0777); err != nil {
+			log.Errorf("create %s error: %v", containerLinkBaseDir, err)
+			return err
+		}
+	}
+
+	for mountPoint, symlink := range symlinks {
+		err := os.Symlink(mountPoint, symlink)
+		if err != nil && !os.IsExist(err) {
+			log.Errorf("create symlink %s error: %v", symlink, err)
+		}
+	}
+	return nil
+}
+
+func (p *Pilot) removeVolumeSymlink(containerId string) error {
+	linkBaseDir := path.Join(p.base, SYMLINK_LOGS_BASE)
+	containerLinkDirs, _ := filepath.Glob(path.Join(linkBaseDir, "*", "*", containerId))
+	if containerLinkDirs == nil {
+		return nil
+	}
+	for _, containerLinkDir := range containerLinkDirs {
+		if err := os.RemoveAll(containerLinkDir); err != nil {
+			log.Warnf("remove error: %v", err)
+		}
+	}
+	return nil
 }
 
 func Run(tpl string, baseDir string) error {

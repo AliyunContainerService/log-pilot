@@ -9,4 +9,5 @@ services:
       - /:/host
     environment:
       FLUENTD_OUTPUT: file
+      FLUENTD_FLUSH_MODE: immediate
       FILE_PATH: /host/tmp/logs
