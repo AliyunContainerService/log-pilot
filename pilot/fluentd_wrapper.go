@@ -9,17 +9,29 @@ import (
 	"time"
 )
 
+const PILOT_FLUENTD = "fluentd"
+const FLUENTD_CONF_HOME = "/etc/fluentd/conf.d"
+
 var fluentd *exec.Cmd
 
-const ERR_ALREADY_STARTED = "fluentd already started"
+type FluentdPiloter struct {
+	name string
+}
 
-func StartFluentd() error {
+func NewFluentdPiloter() (Piloter, error) {
+	return &FluentdPiloter{
+		name: PILOT_FLUENTD,
+	}, nil
+}
+
+func (p *FluentdPiloter) Start() error {
 	if fluentd != nil {
 		return fmt.Errorf(ERR_ALREADY_STARTED)
 	}
 
 	log.Info("start fluentd")
-	fluentd = exec.Command("/usr/bin/fluentd", "-c", "/etc/fluentd/fluentd.conf", "-p", "/etc/fluentd/plugins")
+	fluentd = exec.Command("/usr/bin/fluentd", "-c", "/etc/fluentd/fluentd.conf",
+		"-p", "/etc/fluentd/plugins")
 	fluentd.Stderr = os.Stderr
 	fluentd.Stdout = os.Stdout
 	err := fluentd.Start()
@@ -35,16 +47,11 @@ func StartFluentd() error {
 	return err
 }
 
-func shell(command string) string {
-	cmd := exec.Command("/bin/sh", "-c", command)
-	out, err := cmd.Output()
-	if err != nil {
-		fmt.Printf("error %v", err)
-	}
-	return string(out)
+func (p *FluentdPiloter) Stop() error {
+	return nil
 }
 
-func ReloadFluentd() error {
+func (p *FluentdPiloter) Reload() error {
 	if fluentd == nil {
 		err := fmt.Errorf("fluentd have not started")
 		log.Error(err)
@@ -68,5 +75,31 @@ func ReloadFluentd() error {
 		close(ch)
 	}(fluentd.Process.Pid)
 	<-ch
+	return nil
+}
+
+func (p *FluentdPiloter) ConfPathOf(container string) string {
+	return fmt.Sprintf("%s/%s.conf", FLUENTD_CONF_HOME, container)
+}
+
+func shell(command string) string {
+	cmd := exec.Command("/bin/sh", "-c", command)
+	out, err := cmd.Output()
+	if err != nil {
+		fmt.Printf("error %v", err)
+	}
+	return string(out)
+}
+
+func (p *FluentdPiloter) ConfHome() string {
+	return FLUENTD_CONF_HOME
+}
+
+func (p *FluentdPiloter) Name() string {
+	return p.name
+}
+
+func (p *FluentdPiloter) OnDestroyEvent(container string) error {
+	log.Info("refactor in the future!!!")
 	return nil
 }

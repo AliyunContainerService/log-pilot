@@ -29,7 +29,6 @@ aliyun.log: /var/log/hello.log[:json][;/var/log/abc/def.log[:txt]]
 
 const LABEL_SERVICE_LOGS = "aliyun.logs."
 const ENV_SERVICE_LOGS = "aliyun_logs_"
-const FLUENTD_CONF_HOME = "/etc/fluentd"
 const SYMLINK_LOGS_BASE = "/acs/log/"
 
 const LABEL_PROJECT = "com.docker.compose.project"
@@ -38,6 +37,8 @@ const LABEL_SERVICE = "com.docker.compose.service"
 const LABEL_SERVICE_SWARM_MODE = "com.docker.swarm.service.name"
 const LABEL_POD = "io.kubernetes.pod.name"
 
+const ERR_ALREADY_STARTED = "already started"
+
 type Pilot struct {
 	mutex        sync.Mutex
 	tpl          *template.Template
@@ -45,10 +46,35 @@ type Pilot struct {
 	dockerClient *client.Client
 	reloadChan   chan bool
 	lastReload   time.Time
+	piloter      Piloter
+}
+
+type Piloter interface {
+	Name() string
+	Start() error
+	Reload() error
+	Stop() error
+	ConfHome() string
+	ConfPathOf(container string) string
+	OnDestroyEvent(container string) error
+}
+
+var NeedCreateSymlink = false
+
+func Run(tpl string, baseDir string) error {
+	if os.Getenv("CREATE_SYMLINK") == "true" {
+		NeedCreateSymlink = true
+	}
+
+	p, err := New(tpl, baseDir)
+	if err != nil {
+		panic(err)
+	}
+	return p.watch()
 }
 
 func New(tplStr string, baseDir string) (*Pilot, error) {
-	tpl, err := template.New("fluentd").Parse(tplStr)
+	tpl, err := template.New("pilot").Parse(tplStr)
 	if err != nil {
 		return nil, err
 	}
@@ -56,10 +82,15 @@ func New(tplStr string, baseDir string) (*Pilot, error) {
 	if os.Getenv("DOCKER_API_VERSION") == "" {
 		os.Setenv("DOCKER_API_VERSION", "1.23")
 	}
-	client, err := client.NewEnvClient()
 
+	client, err := client.NewEnvClient()
 	if err != nil {
 		return nil, err
+	}
+
+	piloter, _ := NewFluentdPiloter()
+	if os.Getenv("PILOT_TYPE") == PILOT_FILEBEAT {
+		piloter, _ = NewFilebeatPiloter()
 	}
 
 	return &Pilot{
@@ -67,16 +98,16 @@ func New(tplStr string, baseDir string) (*Pilot, error) {
 		tpl:          tpl,
 		base:         baseDir,
 		reloadChan:   make(chan bool),
+		piloter:      piloter,
 	}, nil
 }
 
 func (p *Pilot) watch() error {
-
 	if err := p.processAllContainers(); err != nil {
 		return err
 	}
 
-	err := StartFluentd()
+	err := p.piloter.Start()
 	if err != nil && ERR_ALREADY_STARTED != err.Error() {
 		return err
 	}
@@ -122,12 +153,13 @@ type LogConfig struct {
 }
 
 func (p *Pilot) cleanConfigs() error {
-	confDir := fmt.Sprintf("%s/conf.d", FLUENTD_CONF_HOME)
+	confDir := fmt.Sprintf(p.piloter.ConfHome())
 	d, err := os.Open(confDir)
 	if err != nil {
 		return err
 	}
 	defer d.Close()
+
 	names, err := d.Readdirnames(-1)
 	if err != nil {
 		return err
@@ -146,7 +178,6 @@ func (p *Pilot) cleanConfigs() error {
 		}
 	}
 	return nil
-
 }
 
 func (p *Pilot) processAllContainers() error {
@@ -241,7 +272,6 @@ func putIfNotEmpty(store map[string]string, key, value string) {
 	if key == "" || value == "" {
 		return
 	}
-
 	store[key] = value
 }
 
@@ -255,7 +285,6 @@ func container(containerJSON *types.ContainerJSON) map[string]string {
 	putIfNotEmpty(c, "k8s_pod", labels[LABEL_POD])
 	putIfNotEmpty(c, "docker_container", strings.TrimPrefix(containerJSON.Name, "/"))
 	extension(c, containerJSON)
-
 	return c
 }
 
@@ -286,7 +315,6 @@ func (p *Pilot) newContainer(containerJSON *types.ContainerJSON) error {
 			labelKey := strings.Replace(envLabel[0], "_", ".", -1)
 			labels[labelKey] = envLabel[1]
 		}
-
 	}
 
 	logConfigs, err := p.getLogConfigs(jsonLogPath, mounts, labels)
@@ -304,15 +332,16 @@ func (p *Pilot) newContainer(containerJSON *types.ContainerJSON) error {
 
 	//pilot.findMounts(logConfigs, jsonLogPath, mounts)
 	//生成配置
-	fluentdConfig, err := p.render(id, container, logConfigs)
+	logConfig, err := p.render(id, container, logConfigs)
 	if err != nil {
 		return err
 	}
 	//TODO validate config before save
-	//log.Debugf("container %s fluentd config: %s", id, fluentdConfig)
-	if err = ioutil.WriteFile(p.pathOf(id), []byte(fluentdConfig), os.FileMode(0644)); err != nil {
+	//log.Debugf("container %s log config: %s", id, logConfig)
+	if err = ioutil.WriteFile(p.piloter.ConfPathOf(id), []byte(logConfig), os.FileMode(0644)); err != nil {
 		return err
 	}
+
 	p.tryReload()
 	return nil
 }
@@ -333,19 +362,23 @@ func (p *Pilot) doReload() {
 	}
 }
 
-func (p *Pilot) pathOf(container string) string {
-	return fmt.Sprintf("%s/conf.d/%s.conf", FLUENTD_CONF_HOME, container)
-}
+func (p *Pilot) delContainer(id string) error {
+	p.removeVolumeSymlink(id)
 
-func (p *Pilot) delContainer(id string) func() {
-	return func() {
-		log.Infof("Try remove config %s", id)
-		p.removeVolumeSymlink(id)
-		if err := os.Remove(p.pathOf(id)); err != nil {
-			log.Errorf("%s is already exists.", id)
-			return
+	// refactor in the future
+	if p.piloter.Name() == PILOT_FLUENTD {
+		clean := func() {
+			log.Infof("Try removing log config %s", id)
+			if err := os.Remove(p.piloter.ConfPathOf(id)); err != nil {
+				log.Warnf("removing %s log config failure", id)
+				return
+			}
+			p.tryReload()
 		}
-		p.tryReload()
+		time.AfterFunc(15*time.Minute, clean)
+		return nil
+	} else {
+		return p.piloter.OnDestroyEvent(id)
 	}
 }
 
@@ -370,7 +403,10 @@ func (p *Pilot) processEvent(msg events.Message) error {
 		return p.newContainer(&containerJSON)
 	case "destroy":
 		log.Debugf("Process container destory event: %s", containerId)
-		time.AfterFunc(15*time.Minute, p.delContainer(containerId))
+		err := p.delContainer(containerId)
+		if err != nil {
+			log.Warnf("Process container destory event error: %s, %s", containerId, err.Error())
+		}
 	}
 	return nil
 }
@@ -427,24 +463,27 @@ func (p *Pilot) parseLogConfig(name string, info *LogInfoNode, jsonLogPath strin
 
 	tags := info.get("tags")
 	tagMap, err := p.parseTags(tags)
-
 	if err != nil {
 		return nil, fmt.Errorf("parse tags for %s error: %v", name, err)
 	}
 
 	target := info.get("target")
-
 	timeKey := info.get("time_key")
 	if timeKey == "" {
 		timeKey = "@timestamp"
 	}
 
 	if path == "stdout" {
+		logFile := filepath.Base(jsonLogPath)
+		if p.piloter.Name() == PILOT_FILEBEAT {
+			logFile = logFile + "*"
+		}
+
 		return &LogConfig{
 			Name:         name,
 			HostDir:      filepath.Join(p.base, filepath.Dir(jsonLogPath)),
 			Format:       "json",
-			File:         filepath.Base(jsonLogPath),
+			File:         logFile,
 			Tags:         tagMap,
 			FormatConfig: map[string]string{"time_format": "%Y-%m-%dT%H:%M:%S.%NZ"},
 			Target:       target,
@@ -569,7 +608,7 @@ func (p *Pilot) getLogConfigs(jsonLogPath string, mounts []types.MountPoint, lab
 }
 
 func (p *Pilot) exists(containId string) bool {
-	if _, err := os.Stat(p.pathOf(containId)); os.IsNotExist(err) {
+	if _, err := os.Stat(p.piloter.ConfPathOf(containId)); os.IsNotExist(err) {
 		return false
 	}
 	return true
@@ -580,12 +619,17 @@ func (p *Pilot) render(containerId string, container map[string]string, configLi
 		log.Infof("logs: %s = %v", containerId, config)
 	}
 
+	output := os.Getenv("FLUENTD_OUTPUT")
+	if p.piloter.Name() == PILOT_FILEBEAT {
+		output = os.Getenv("FILEBEAT_OUTPUT")
+	}
+
 	var buf bytes.Buffer
 	context := map[string]interface{}{
-		"containerId":   containerId,
-		"configList":    configList,
-		"container":     container,
-		"fluentdOutput": os.Getenv("FLUENTD_OUTPUT"),
+		"containerId": containerId,
+		"configList":  configList,
+		"container":   container,
+		"output":      output,
 	}
 	if err := p.tpl.Execute(&buf, context); err != nil {
 		return "", err
@@ -596,16 +640,20 @@ func (p *Pilot) render(containerId string, container map[string]string, configLi
 func (p *Pilot) reload() error {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
-	log.Info("Reload fluentd")
+	log.Infof("Reload %s", p.piloter.Name())
 	interval := time.Now().Sub(p.lastReload)
 	time.Sleep(30*time.Second - interval)
 	log.Info("Start reloading")
-	err := ReloadFluentd()
+	err := p.piloter.Reload()
 	p.lastReload = time.Now()
 	return err
 }
 
 func (p *Pilot) createVolumeSymlink(containerJSON *types.ContainerJSON) error {
+	if !NeedCreateSymlink {
+		return nil
+	}
+
 	linkBaseDir := path.Join(p.base, SYMLINK_LOGS_BASE)
 	if _, err := os.Stat(linkBaseDir); err != nil && os.IsNotExist(err) {
 		if err := os.MkdirAll(linkBaseDir, 0777); err != nil {
@@ -655,6 +703,10 @@ func (p *Pilot) createVolumeSymlink(containerJSON *types.ContainerJSON) error {
 }
 
 func (p *Pilot) removeVolumeSymlink(containerId string) error {
+	if !NeedCreateSymlink {
+		return nil
+	}
+
 	linkBaseDir := path.Join(p.base, SYMLINK_LOGS_BASE)
 	containerLinkDirs, _ := filepath.Glob(path.Join(linkBaseDir, "*", "*", containerId))
 	if containerLinkDirs == nil {
@@ -666,12 +718,4 @@ func (p *Pilot) removeVolumeSymlink(containerId string) error {
 		}
 	}
 	return nil
-}
-
-func Run(tpl string, baseDir string) error {
-	p, err := New(tpl, baseDir)
-	if err != nil {
-		panic(err)
-	}
-	return p.watch()
 }
