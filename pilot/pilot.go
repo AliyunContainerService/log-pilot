@@ -281,12 +281,11 @@ func (p *Pilot) newContainer(containerJSON *types.ContainerJSON) error {
 		if !strings.HasPrefix(e, ENV_SERVICE_LOGS) {
 			continue
 		}
-		envLabel := strings.Split(e, "=")
+		envLabel := strings.SplitN(e, "=", 2)
 		if len(envLabel) == 2 {
 			labelKey := strings.Replace(envLabel[0], "_", ".", -1)
 			labels[labelKey] = envLabel[1]
 		}
-
 	}
 
 	logConfigs, err := p.getLogConfigs(jsonLogPath, mounts, labels)
