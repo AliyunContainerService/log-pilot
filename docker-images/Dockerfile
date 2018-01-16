@@ -22,7 +22,7 @@ RUN apk update && apk upgrade && \
   apk add curl openssl && \
   apk add --allow-untrusted /tmp/glibc-2.26-r0.apk && \
   update-ca-certificates && \
-  wget --no-check-certificate https://artifacts.elastic.co/downloads/beats/filebeat/filebeat-${FILEBEAT_VERSION}-linux-x86_64.tar.gz -P /tmp/ && \
+  wget http://acs-logging.oss-cn-hangzhou.aliyuncs.com/beats/filebeat/filebeat-${FILEBEAT_VERSION}-linux-x86_64.tar.gz -P /tmp/ && \
   mkdir -p /usr/share/filebeat /usr/share/filebeat/data /usr/share/filebeat/logs /usr/share/filebeat/prospectors.d && \
   tar zxf /tmp/filebeat-${FILEBEAT_VERSION}-linux-x86_64.tar.gz -C /tmp/ && \
   cp -rf /tmp/filebeat-${FILEBEAT_VERSION}-linux-x86_64/filebeat /usr/share/filebeat/ && \

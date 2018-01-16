@@ -44,10 +44,10 @@ do
 done
 
 blue "\nCleanup"
-docker-compose -p tomcat -f ../tomcat.yml down
+docker-compose -p tomcat -f tomcat.yml down
 
 blue "Starting tomcat"
-docker-compose -p tomcat -f ../tomcat.yml up -d
+docker-compose -p tomcat -f tomcat.yml up -d
 
 pwd=$(pwd)
 project=$(basename $pwd)
