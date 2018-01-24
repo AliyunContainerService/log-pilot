@@ -11,7 +11,7 @@ import (
 
 func main() {
 
-	template := flag.String("template", "", "Template filepath for fluentd.")
+	template := flag.String("template", "", "Template filepath for fluentd or filebeat.")
 	base := flag.String("base", "", "Directory which mount host root.")
 	level := flag.String("log-level", "INFO", "Log level")
 	flag.Parse()

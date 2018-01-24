@@ -28,7 +28,7 @@
     {{ $key }} {{ $value }}
     {{end}}
 
-    {{if eq $.fluentdOutput "elasticsearch"}}
+    {{if eq $.output "elasticsearch"}}
     @target {{if .Target}}{{.Target}}-${time.strftime('%Y.%m.%d')}{{else}}{{ .Name }}-${time.strftime('%Y.%m.%d')}{{end}}
     {{else}}
     @target {{if .Target}}{{.Target}}{{else}}{{ .Name }}{{end}}

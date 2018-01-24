@@ -9,4 +9,3 @@ cp bin/pilot docker-images/
 )
 
 docker build -t pilot .
-
