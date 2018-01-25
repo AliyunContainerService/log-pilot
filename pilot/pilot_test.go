@@ -19,7 +19,8 @@ type PilotSuite struct{}
 var _ = check.Suite(&PilotSuite{})
 
 func (p *PilotSuite) TestGetLogConfigs(c *check.C) {
-	pilot := &Pilot{}
+	fluentdPiloter, _ := NewFluentdPiloter()
+	pilot := &Pilot{piloter: fluentdPiloter}
 	labels := map[string]string{}
 	configs, err := pilot.getLogConfigs("/path/to/json.log", []types.MountPoint{}, labels)
 	c.Assert(err, check.IsNil)
@@ -90,6 +91,52 @@ func (p *PilotSuite) TestRender(c *check.C) {
 	}
 	pilot, err := New(template, "/")
 	c.Assert(err, check.IsNil)
-	_, err = pilot.render("id-1111", Source{}, configs)
+	_, err = pilot.render("id-1111", make(map[string]string), configs)
 	c.Assert(err, check.IsNil)
+}
+
+func (p *PilotSuite) TestAggregationConfigs(c *check.C) {
+	fluentdPiloter, _ := NewFluentdPiloter()
+	pilot := &Pilot{piloter: fluentdPiloter}
+	labels := map[string]string{}
+	configs, err := pilot.getLogConfigs("/path/to/json.log", []types.MountPoint{}, labels)
+	c.Assert(err, check.IsNil)
+	c.Assert(configs, check.HasLen, 0)
+
+	labels = map[string]string{
+		"aliyun.logs.hello":                    "stdout,web-log:/var/log/hello.log,egg-web:/var/log/wormholes-admin/egg-web.log",
+		"aliyun.logs.hello.format":             "json",
+		"aliyun.logs.hello.tags":               "name=hello,stage=test",
+		"aliyun.logs.hello.format.time_format": "%Y-%m-%d",
+	}
+
+	//no mount
+	configs, err = pilot.getLogConfigs("/path/to/json.log", []types.MountPoint{}, labels)
+	c.Assert(err, check.NotNil)
+
+	mounts := []types.MountPoint{
+		{
+			Source:      "/host",
+			Destination: "/var/log",
+		},
+	}
+	configs, err = pilot.getLogConfigs("/path/to/json.log", mounts, labels)
+	c.Assert(err, check.IsNil)
+	c.Assert(configs, check.HasLen, 3)
+	c.Assert(configs[0].Format, check.Equals, "json")
+	c.Assert(configs[0].FormatConfig, check.HasLen, 1)
+	c.Assert(configs[1].ContainerDir, check.Equals, "/var/log")
+	c.Assert(configs[1].File, check.Equals, "hello.log")
+	c.Assert(configs[1].Tags, check.HasLen, 3)
+	c.Assert(configs[1].Tags["web-log"], check.Equals, "/var/log/hello.log")
+
+	//Test default stream key :'stream'
+	labels = map[string]string{
+		"aliyun.logs.hello":                    "stdout,/var/log/hello.log,/var/log/wormholes-admin/egg-web.log",
+		"aliyun.logs.hello.format":             "json",
+		"aliyun.logs.hello.tags":               "name=hello,stage=test",
+		"aliyun.logs.hello.format.time_format": "%Y-%m-%d",
+	}
+	configs, err = pilot.getLogConfigs("/path/to/json.log", mounts, labels)
+	c.Assert(configs[1].Tags["stream"], check.Equals, "/var/log/hello.log")
 }

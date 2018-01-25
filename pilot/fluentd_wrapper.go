@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"syscall"
 	"time"
+	"strings"
 )
 
 const PILOT_FLUENTD = "fluentd"
@@ -30,8 +31,11 @@ func (p *FluentdPiloter) Start() error {
 	}
 
 	log.Info("start fluentd")
-	fluentd = exec.Command("/usr/bin/fluentd", "-c", "/etc/fluentd/fluentd.conf",
-		"-p", "/etc/fluentd/plugins")
+	cmdArgs := []string{"-c", "/etc/fluentd/fluentd.conf", "-p", "/etc/fluentd/plugins"}
+	if strings.ToUpper(os.Getenv("FLUETND_DEBUG")) == "DEBUG" {
+		cmdArgs = append(cmdArgs, "-v")
+	}
+	fluentd = exec.Command("/usr/bin/fluentd", cmdArgs...)
 	fluentd.Stderr = os.Stderr
 	fluentd.Stdout = os.Stdout
 	err := fluentd.Start()
@@ -63,11 +67,18 @@ func (p *FluentdPiloter) Reload() error {
 	go func(pid int) {
 		command := fmt.Sprintf("pgrep -P %d", pid)
 		childId := shell(command)
+		if childId == "" {
+			//restart: always
+			close(ch)
+			os.Exit(1)
+			return
+		}
+
 		log.Infof("before reload childId : %s", childId)
 		fluentd.Process.Signal(syscall.SIGHUP)
 		time.Sleep(5 * time.Second)
 		afterChildId := shell(command)
-		log.Infof("after reload childId : %s", childId)
+		log.Infof("after reload childId : %s", afterChildId)
 		if childId == afterChildId {
 			log.Infof("kill childId : %s", childId)
 			shell("kill -9 " + childId)

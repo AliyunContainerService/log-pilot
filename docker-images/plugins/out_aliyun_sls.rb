@@ -11,12 +11,15 @@ module Fluent
     config_param :need_create_logstore, :bool, :default => false
     config_param :create_logstore_ttl, :integer, :default => 1
     config_param :create_logstore_shard_count, :integer, :default => 2
+    config_param :need_host_ip, :bool, :default => false
 
     def initialize
       super
       require "aliyun_sls_sdk/protobuf"
       require "aliyun_sls_sdk"
+      require "socket"
       @log_store_created = false
+      @host = nil
     end
 
     def configure(conf)
@@ -42,6 +45,9 @@ module Fluent
 
     def client
       @topic = `hostname`.strip
+      if @need_host_ip
+        @host=IPSocket.getaddress(Socket.gethostname)
+      end
       @_sls_con ||= AliyunSlsSdk::LogClient.new(@region_endpoint, @access_key_id, @access_key_secret, @ssl_verify)
     end
 
@@ -49,6 +55,7 @@ module Fluent
       retries = 2
       begin
         createLogStoreResp = client.create_logstore(@project, logstore_name, @create_logstore_ttl, @create_logstore_shard_count)
+        log.debug "\tcreateLogStoreResp: #{createLogStoreResp.inspect}"
       rescue AliyunSlsSdk::LogException => e
         if e.errorCode == "LogStoreAlreadyExist"
           log.warn "logstore #{logstore_name} already exist"
@@ -89,10 +96,11 @@ module Fluent
 
       log_list_hash.each do |storeName, logitems|
         logitems.each_slice(4096) do |items|
-          putLogRequest = AliyunSlsSdk::PutLogsRequest.new(@project, storeName, @topic, nil, items, nil, true)
+          putLogRequest = AliyunSlsSdk::PutLogsRequest.new(@project, storeName, @topic, @host, items, nil, true)
           retries = 0
           begin
-            client.put_logs(putLogRequest)
+            putLogsResponse = client.put_logs(putLogRequest)
+            log.debug "\tputLogResult: #{putLogsResponse.inspect}"
           rescue  => e
             if e.instance_of?(AliyunSlsSdk::LogException) && e.errorCode == "LogStoreNotExist" && @need_create_logstore
               createLogStore(storeName)

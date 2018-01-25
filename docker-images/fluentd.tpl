@@ -17,13 +17,14 @@
 <filter docker.{{ $.containerId }}.{{ .Name }}>
   @type add_time
   time_key {{ .TimeKey}}
+  time_format {{ .TimeFormat}}
 </filter>
 
 <filter docker.{{ $.containerId }}.{{ .Name }}>
   @type record_transformer
   enable_ruby true
   <record>
-    host "#{Socket.gethostname}"
+    {{ .HostKey}} "#{Socket.gethostname}"
     {{range $key, $value := .Tags}}
     {{ $key }} {{ $value }}
     {{end}}
