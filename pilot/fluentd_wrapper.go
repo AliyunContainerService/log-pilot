@@ -32,7 +32,7 @@ func (p *FluentdPiloter) Start() error {
 
 	log.Info("start fluentd")
 	cmdArgs := []string{"-c", "/etc/fluentd/fluentd.conf", "-p", "/etc/fluentd/plugins"}
-	if strings.ToUpper(os.Getenv("FLUETND_DEBUG")) == "DEBUG" {
+	if strings.ToUpper(os.Getenv("FLUETND_DEBUG")) == "TRUE" {
 		cmdArgs = append(cmdArgs, "-v")
 	}
 	fluentd = exec.Command("/usr/bin/fluentd", cmdArgs...)
