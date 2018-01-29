@@ -471,7 +471,7 @@ func (p *Pilot) parseTags(tags string) (map[string]string, error) {
 }
 
 func (p *Pilot) parseLogConfig(name string, info *LogInfoNode, jsonLogPath string, mounts map[string]types.MountPoint) (*LogConfig, error) {
-	path := info.value
+	path := strings.TrimSpace(info.value)
 	if path == "" {
 		return nil, fmt.Errorf("path for %s is empty", name)
 	}
