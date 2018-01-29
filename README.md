@@ -1,9 +1,9 @@
-fluentd-pilot
-=============
+log-pilot
+=========
 
-[![CircleCI](https://circleci.com/gh/AliyunContainerService/fluentd-pilot.svg?style=svg)](https://circleci.com/gh/AliyunContainerService/fluentd-pilot)
+[![CircleCI](https://circleci.com/gh/AliyunContainerService/log-pilot.svg?style=svg)](https://circleci.com/gh/AliyunContainerService/log-pilot)
 
-`fluentd-pilot` is an awesome docker log tool. With `fluentd-pilot` you can collect logs from docker hosts and send them to your centralize log system such as elasticsearch, graylog2, awsog and etc. `fluentd-pilot` can collect not only docker stdout but also log file that inside docker containers.
+`log-pilot` is an awesome docker log tool. With `log-pilot` you can collect logs from docker hosts and send them to your centralized log system such as elasticsearch, graylog2, awsog and etc. `log-pilot` can collect not only docker stdout but also log file that inside docker containers.
 
 Try it
 ======
@@ -14,8 +14,8 @@ Prerequisites:
 - Docker Engine >= 1.10
 
 ```
-git clone git@github.com:AliyunContainerService/fluentd-pilot.git
-cd fluentd-pilot/quickstart
+git clone git@github.com:AliyunContainerService/log-pilot.git
+cd log-pilot/quickstart
 ./run
 ```
 
@@ -36,7 +36,7 @@ Quickstart
 docker run --rm -it \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -v /:/host \
-    registry.cn-hangzhou.aliyuncs.com/acs-sample/fluentd-pilot:latest
+    registry.cn-hangzhou.aliyuncs.com/acs-sample/log-pilot:latest
 ```
 
 ### Run applications whose logs need to be collected
@@ -51,20 +51,20 @@ docker run -it --rm  -p 10080:8080 \
     tomcat
 ```
 
-Now watch the output of fluentd-pilot. You will find that fluentd-pilot get all tomcat's startup logs. If you access tomcat with your broswer, access logs in `/usr/local/tomcat/logs/localhost_access_log.\*.txt` will also be displayed in fluentd-pilot's output.
+Now watch the output of log-pilot. You will find that log-pilot get all tomcat's startup logs. If you access tomcat with your broswer, access logs in `/usr/local/tomcat/logs/localhost_access_log.\*.txt` will also be displayed in log-pilot's output.
 
-More Info: [Documents](docs/docs.md)
+More Info: [Fluentd Plugin](docs/fluentd/docs.md) and [Filebeat Plugin](docs/filebeat/docs.md)
 
 Feature
 ========
 
-- Single fluentd process per docker host. You don't need to create new fluentd process for every docker container.
-- Support both stdout and file. Either Docker log driver or logspout can only collect stdout.
+- Support both [fluentd plugin](docs/fluentd/docs.md) and [filebeat plugin](docs/filebeat/docs.md). You don't need to create new fluentd or filebeat process for every docker container.
+- Support both stdout and log files. Either docker log driver or logspout can only collect stdout.
 - Declarative configuration. You need do nothing but declare the logs you want to collect.
 - Support many log management: elastichsearch, graylog2, awslogs and more.
 - Tags. You could add tags on the logs collected, and later filter by tags in log management.
 
-Build fluentd-pilot
+Build log-pilot
 ===================
 
 Prerequisites:
@@ -72,8 +72,8 @@ Prerequisites:
 - Go >= 1.6
 
 ```
-go get github.com/AliyunContainerService/fluentd-pilot
-cd $GOPATH/github.com/AliyunContainerService/fluentd-pilot/docker-images
+go get github.com/AliyunContainerService/log-pilot
+cd $GOPATH/github.com/AliyunContainerService/log-pilot/docker-images
 ./build.sh # This will create a new docker image named pilot:latest
 ```
 

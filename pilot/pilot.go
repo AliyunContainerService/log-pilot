@@ -27,8 +27,14 @@ Label:
 aliyun.log: /var/log/hello.log[:json][;/var/log/abc/def.log[:txt]]
 */
 
-const LABEL_SERVICE_LOGS = "aliyun.logs."
-const ENV_SERVICE_LOGS = "aliyun_logs_"
+const ENV_PILOT_LOG_PREFIX = "PILOT_LOG_PREFIX"
+const ENV_PILOT_TYPE = "PILOT_TYPE"
+const ENV_PILOT_CREATE_SYMLINK = "PILOT_CREATE_SYMLINK"
+const ENV_FLUENTD_OUTPUT = "FLUENTD_OUTPUT"
+const ENV_FILEBEAT_OUTPUT = "FILEBEAT_OUTPUT"
+
+const LABEL_SERVICE_LOGS_TEMPL = "%s.logs."
+const ENV_SERVICE_LOGS_TEMPL = "%s_logs_"
 const SYMLINK_LOGS_BASE = "/acs/log/"
 
 const LABEL_PROJECT = "com.docker.compose.project"
@@ -40,13 +46,15 @@ const LABEL_POD = "io.kubernetes.pod.name"
 const ERR_ALREADY_STARTED = "already started"
 
 type Pilot struct {
-	mutex        sync.Mutex
-	tpl          *template.Template
-	base         string
-	dockerClient *client.Client
-	reloadChan   chan bool
-	lastReload   time.Time
-	piloter      Piloter
+	mutex         sync.Mutex
+	tpl           *template.Template
+	base          string
+	dockerClient  *client.Client
+	reloadChan    chan bool
+	lastReload    time.Time
+	piloter       Piloter
+	logPrefix     []string
+	createSymlink bool
 }
 
 type Piloter interface {
@@ -59,13 +67,7 @@ type Piloter interface {
 	OnDestroyEvent(container string) error
 }
 
-var NeedCreateSymlink = false
-
 func Run(tpl string, baseDir string) error {
-	if os.Getenv("CREATE_SYMLINK") == "true" {
-		NeedCreateSymlink = true
-	}
-
 	p, err := New(tpl, baseDir)
 	if err != nil {
 		panic(err)
@@ -89,16 +91,25 @@ func New(tplStr string, baseDir string) (*Pilot, error) {
 	}
 
 	piloter, _ := NewFluentdPiloter()
-	if os.Getenv("PILOT_TYPE") == PILOT_FILEBEAT {
+	if os.Getenv(ENV_PILOT_TYPE) == PILOT_FILEBEAT {
 		piloter, _ = NewFilebeatPiloter()
 	}
 
+	logPrefix := []string{"aliyun"}
+	if os.Getenv(ENV_PILOT_LOG_PREFIX) != "" {
+		envLogPrefix := os.Getenv(ENV_PILOT_LOG_PREFIX)
+		logPrefix = strings.Split(envLogPrefix, ",")
+	}
+
+	createSymlink := os.Getenv(ENV_PILOT_CREATE_SYMLINK) == "true"
 	return &Pilot{
-		dockerClient: client,
-		tpl:          tpl,
-		base:         baseDir,
-		reloadChan:   make(chan bool),
-		piloter:      piloter,
+		dockerClient:  client,
+		tpl:           tpl,
+		base:          baseDir,
+		reloadChan:    make(chan bool),
+		piloter:       piloter,
+		logPrefix:     logPrefix,
+		createSymlink: createSymlink,
 	}, nil
 }
 
@@ -307,13 +318,17 @@ func (p *Pilot) newContainer(containerJSON *types.ContainerJSON) error {
 	container := container(containerJSON)
 
 	for _, e := range env {
-		if !strings.HasPrefix(e, ENV_SERVICE_LOGS) {
-			continue
-		}
-		envLabel := strings.SplitN(e, "=", 2)
-		if len(envLabel) == 2 {
-			labelKey := strings.Replace(envLabel[0], "_", ".", -1)
-			labels[labelKey] = envLabel[1]
+		for _, prefix := range p.logPrefix {
+			serviceLogs := fmt.Sprintf(ENV_SERVICE_LOGS_TEMPL, prefix)
+			if !strings.HasPrefix(e, serviceLogs) {
+				continue
+			}
+
+			envLabel := strings.SplitN(e, "=", 2)
+			if len(envLabel) == 2 {
+				labelKey := strings.Replace(envLabel[0], "_", ".", -1)
+				labels[labelKey] = envLabel[1]
+			}
 		}
 	}
 
@@ -473,6 +488,22 @@ func (p *Pilot) parseLogConfig(name string, info *LogInfoNode, jsonLogPath strin
 		timeKey = "@timestamp"
 	}
 
+	// add default index or topic
+	if _, ok := tagMap["index"]; !ok {
+		if target != "" {
+			tagMap["index"] = target
+		} else {
+			tagMap["index"] = name
+		}
+	}
+	if _, ok := tagMap["topic"]; !ok {
+		if target != "" {
+			tagMap["topic"] = target
+		} else {
+			tagMap["topic"] = name
+		}
+	}
+
 	if path == "stdout" {
 		logFile := filepath.Base(jsonLogPath)
 		if p.piloter.Name() == PILOT_FILEBEAT {
@@ -588,12 +619,16 @@ func (p *Pilot) getLogConfigs(jsonLogPath string, mounts []types.MountPoint, lab
 	sort.Strings(labelNames)
 	root := newLogInfoNode("")
 	for _, k := range labelNames {
-		if !strings.HasPrefix(k, LABEL_SERVICE_LOGS) || strings.Count(k, ".") == 1 {
-			continue
-		}
-		logLabel := strings.TrimPrefix(k, LABEL_SERVICE_LOGS)
-		if err := root.insert(strings.Split(logLabel, "."), labels[k]); err != nil {
-			return nil, err
+		for _, prefix := range p.logPrefix {
+			serviceLogs := fmt.Sprintf(LABEL_SERVICE_LOGS_TEMPL, prefix)
+			if !strings.HasPrefix(k, serviceLogs) || strings.Count(k, ".") == 1 {
+				continue
+			}
+
+			logLabel := strings.TrimPrefix(k, serviceLogs)
+			if err := root.insert(strings.Split(logLabel, "."), labels[k]); err != nil {
+				return nil, err
+			}
 		}
 	}
 
@@ -619,9 +654,9 @@ func (p *Pilot) render(containerId string, container map[string]string, configLi
 		log.Infof("logs: %s = %v", containerId, config)
 	}
 
-	output := os.Getenv("FLUENTD_OUTPUT")
+	output := os.Getenv(ENV_FLUENTD_OUTPUT)
 	if p.piloter.Name() == PILOT_FILEBEAT {
-		output = os.Getenv("FILEBEAT_OUTPUT")
+		output = os.Getenv(ENV_FILEBEAT_OUTPUT)
 	}
 
 	var buf bytes.Buffer
@@ -650,7 +685,7 @@ func (p *Pilot) reload() error {
 }
 
 func (p *Pilot) createVolumeSymlink(containerJSON *types.ContainerJSON) error {
-	if !NeedCreateSymlink {
+	if !p.createSymlink {
 		return nil
 	}
 
@@ -703,7 +738,7 @@ func (p *Pilot) createVolumeSymlink(containerJSON *types.ContainerJSON) error {
 }
 
 func (p *Pilot) removeVolumeSymlink(containerId string) error {
-	if !NeedCreateSymlink {
+	if !p.createSymlink {
 		return nil
 	}
 

@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	log "github.com/Sirupsen/logrus"
-	"github.com/AliyunContainerService/fluentd-pilot/pilot"
+	"github.com/AliyunContainerService/log-pilot/pilot"
 	"io/ioutil"
 	"os"
 	"path/filepath"

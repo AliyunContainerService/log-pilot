@@ -62,6 +62,6 @@ cat << EOF
 first access tomcat(generate some logs): http://$host:8080  
 kibana(query the logs tomcat generated): http://$host:5601
 Before you can see any logs,
-you need to create new indexes "catalina" or "access".
+you need to create new indexes "catalina" or "tomcat".
 EOF
 

@@ -8,6 +8,7 @@ import subprocess
 base = '/host'
 pilot_fluentd = "fluentd"
 pilot_filebeat = "filebeat"
+ENV_PILOT_TYPE = "PILOT_TYPE"
 
 
 def umount(volume):
@@ -33,7 +34,7 @@ def cleanup():
 
 
 def run():
-    pilot_type = os.environ.get("PILOT_TYPE")
+    pilot_type = os.environ.get(ENV_PILOT_TYPE)
     if pilot_filebeat == pilot_type:
         tpl_config = "/pilot/filebeat.tpl"
     else:
@@ -44,7 +45,7 @@ def run():
 
 
 def config():
-    pilot_type = os.environ.get("PILOT_TYPE")
+    pilot_type = os.environ.get(ENV_PILOT_TYPE)
     if pilot_filebeat == pilot_type:
         print "enable pilot:", pilot_filebeat
         subprocess.check_call(['/pilot/config.filebeat'])

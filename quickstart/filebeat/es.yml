@@ -24,6 +24,7 @@ services:
       - /:/host
     environment:
       PILOT_TYPE: filebeat
+      PILOT_LOG_PREFIX: "aliyun,custom"
       FILEBEAT_OUTPUT: elasticsearch
       ELASTICSEARCH_HOST: elasticsearch
       ELASTICSEARCH_PORT: 9200

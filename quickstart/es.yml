@@ -15,6 +15,7 @@ services:
       aliyun.routing.port_5601: kibana
     links:
       - elasticsearch
+
   pilot:
     image: pilot:latest
     privileged: true

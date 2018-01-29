@@ -7,10 +7,6 @@ tomcat:
     - /usr/local/tomcat/logs
   labels:
     aliyun.logs.catalina: stdout
-    aliyun.logs.catalina.tags: app=tomcat,stage=test,index=catalina
-    aliyun.logs.access: /usr/local/tomcat/logs/catalina.*.log
-    aliyun.logs.access.tags: app=tomcat,stage=test,index=access
-    com.aliyun.access.cluster: c1
-    com.aliyun.access.owner: owner
-    com.aliyun.access.stage: prod
-
+    aliyun.logs.catalina.tags: app=tomcat,stage=test
+    custom.logs.access: /usr/local/tomcat/logs/catalina.*.log
+    custom.logs.access.tags: app=tomcat,stage=test,index=tomcat,topic=tomcat
