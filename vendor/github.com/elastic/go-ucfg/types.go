@@ -169,7 +169,7 @@ func newSplice(ctx context, m *Meta, s varEvaler) *cfgDynamic {
 }
 
 func newDyn(ctx context, m *Meta, val dynValue) *cfgDynamic {
-	id := string(atomic.AddInt32(&spliceSeq, 1)) + uuid.Must(uuid.NewV4()).String()
+	id := string(atomic.AddInt32(&spliceSeq, 1)) + uuid.NewV4().String()
 	return &cfgDynamic{cfgPrimitive{ctx, m}, cacheID(id), val}
 }
 
