@@ -1,15 +1,15 @@
 package pilot
 
 import (
+	"encoding/json"
+	"fmt"
 	log "github.com/Sirupsen/logrus"
 	"github.com/elastic/go-ucfg"
 	"github.com/elastic/go-ucfg/yaml"
-	"fmt"
-	"os/exec"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"time"
-	"encoding/json"
 )
 
 const PILOT_FILEBEAT = "filebeat"

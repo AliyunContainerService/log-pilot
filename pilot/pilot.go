@@ -3,23 +3,24 @@ package pilot
 import (
 	"bytes"
 	"fmt"
-	log "github.com/Sirupsen/logrus"
-	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/api/types/events"
-	"github.com/docker/docker/api/types/filters"
-	"github.com/docker/docker/client"
-	"golang.org/x/net/context"
 	"io"
 	"io/ioutil"
 	"os"
+	"path"
 	"path/filepath"
 	"sort"
 	"strings"
 	"sync"
 	"text/template"
 	"time"
-	"path"
+
+	log "github.com/Sirupsen/logrus"
+	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/events"
+	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/mount"
+	"github.com/docker/docker/client"
+	"golang.org/x/net/context"
 )
 
 /**
@@ -42,6 +43,11 @@ const LABEL_PROJECT_SWARM_MODE = "com.docker.stack.namespace"
 const LABEL_SERVICE = "com.docker.compose.service"
 const LABEL_SERVICE_SWARM_MODE = "com.docker.swarm.service.name"
 const LABEL_POD = "io.kubernetes.pod.name"
+
+const LABEL_K8S_POD_NAMESPACE = "io.kubernetes.pod.namespace"
+const LABEL_K8S_CONTAINER_NAME = "io.kubernetes.container.name"
+
+var NODE_NAME = os.Getenv("NODE_NAME")
 
 const ERR_ALREADY_STARTED = "already started"
 
@@ -294,6 +300,9 @@ func container(containerJSON *types.ContainerJSON) map[string]string {
 	putIfNotEmpty(c, "docker_service", labels[LABEL_SERVICE])
 	putIfNotEmpty(c, "docker_service", labels[LABEL_SERVICE_SWARM_MODE])
 	putIfNotEmpty(c, "k8s_pod", labels[LABEL_POD])
+	putIfNotEmpty(c, "k8s_pod_namespace", labels[LABEL_K8S_POD_NAMESPACE])
+	putIfNotEmpty(c, "k8s_container_name", labels[LABEL_K8S_CONTAINER_NAME])
+	putIfNotEmpty(c, "k8s_node_name", NODE_NAME)
 	putIfNotEmpty(c, "docker_container", strings.TrimPrefix(containerJSON.Name, "/"))
 	extension(c, containerJSON)
 	return c
