@@ -3,21 +3,24 @@
   @type tail
   tag docker.{{ $.containerId }}.{{ .Name }}
   path {{ .HostDir }}/{{ .File }}
-  format {{ .Format }}
-  read_from_head true
 
+  <parse>
+  @type {{ .Format }}
+  {{ $time_key := "" }}
   {{if .FormatConfig}}
   {{range $key, $value := .FormatConfig}}
   {{ $key }} {{ $value }}
   {{end}}
   {{end}}
+  {{ if .EstimateTime }}
+  estimate_current_event true
+  {{end}}
+  keep_time_key true
+  </parse>
+
+  read_from_head true
   pos_file /pilot/pos/{{ $.containerId }}.{{ .Name }}.pos
 </source>
-
-<filter docker.{{ $.containerId }}.{{ .Name }}>
-  @type add_time
-  time_key {{ .TimeKey}}
-</filter>
 
 <filter docker.{{ $.containerId }}.{{ .Name }}>
   @type record_transformer
@@ -29,9 +32,9 @@
     {{end}}
 
     {{if eq $.output "elasticsearch"}}
-    @target {{if .Target}}{{.Target}}-${time.strftime('%Y.%m.%d')}{{else}}{{ .Name }}-${time.strftime('%Y.%m.%d')}{{end}}
+    _target {{if .Target}}{{.Target}}-${time.strftime('%Y.%m.%d')}{{else}}{{ .Name }}-${time.strftime('%Y.%m.%d')}{{end}}
     {{else}}
-    @target {{if .Target}}{{.Target}}{{else}}{{ .Name }}{{end}}
+    _target {{if .Target}}{{.Target}}{{else}}{{ .Name }}{{end}}
     {{end}}
 
     {{range $key, $value := $.container}}

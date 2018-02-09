@@ -166,7 +166,7 @@ type LogConfig struct {
 	File         string
 	Tags         map[string]string
 	Target       string
-	TimeKey      string
+	EstimateTime bool
 }
 
 func (p *Pilot) cleanConfigs() error {
@@ -492,10 +492,6 @@ func (p *Pilot) parseLogConfig(name string, info *LogInfoNode, jsonLogPath strin
 	}
 
 	target := info.get("target")
-	timeKey := info.get("time_key")
-	if timeKey == "" {
-		timeKey = "@timestamp"
-	}
 
 	// add default index or topic
 	if _, ok := tagMap["index"]; !ok {
@@ -505,6 +501,7 @@ func (p *Pilot) parseLogConfig(name string, info *LogInfoNode, jsonLogPath strin
 			tagMap["index"] = name
 		}
 	}
+
 	if _, ok := tagMap["topic"]; !ok {
 		if target != "" {
 			tagMap["topic"] = target
@@ -527,7 +524,7 @@ func (p *Pilot) parseLogConfig(name string, info *LogInfoNode, jsonLogPath strin
 			Tags:         tagMap,
 			FormatConfig: map[string]string{"time_format": "%Y-%m-%dT%H:%M:%S.%NZ"},
 			Target:       target,
-			TimeKey:      timeKey,
+			EstimateTime: false,
 		}, nil
 	}
 
@@ -546,8 +543,8 @@ func (p *Pilot) parseLogConfig(name string, info *LogInfoNode, jsonLogPath strin
 	}
 
 	format := info.children["format"]
-	if format == nil {
-		format = newLogInfoNode("none")
+	if format == nil || format.value == "none"{
+		format = newLogInfoNode("nonex")
 	}
 
 	formatConfig, err := Convert(format)
@@ -561,7 +558,7 @@ func (p *Pilot) parseLogConfig(name string, info *LogInfoNode, jsonLogPath strin
 		delete(formatConfig, "pattern")
 	}
 
-	return &LogConfig{
+	cfg := &LogConfig{
 		Name:         name,
 		ContainerDir: containerDir,
 		Format:       format.value,
@@ -570,8 +567,12 @@ func (p *Pilot) parseLogConfig(name string, info *LogInfoNode, jsonLogPath strin
 		HostDir:      filepath.Join(p.base, hostDir),
 		FormatConfig: formatConfig,
 		Target:       target,
-		TimeKey:      timeKey,
-	}, nil
+	}
+	if formatConfig["time_key"] == "" {
+		cfg.EstimateTime = true
+		cfg.FormatConfig["time_key"] = "_timestamp"
+	}
+	return cfg, nil
 }
 
 type LogInfoNode struct {

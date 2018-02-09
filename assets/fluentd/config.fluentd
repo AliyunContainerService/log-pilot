@@ -77,7 +77,7 @@ ${ELASTICSEARCH_PASSWORD:+password ${ELASTICSEARCH_PASSWORD}}
 ${ELASTICSEARCH_PATH:+path ${ELASTICSEARCH_PATH}}
 ${ELASTICSEARCH_SCHEME:+scheme ${ELASTICSEARCH_SCHEME}}
 ${ELASTICSEARCH_SSL_VERIFY:+ssl_verify ${ELASTICSEARCH_SSL_VERIFY}}
-target_index_key @target
+target_index_key _target
 type_name fluentd
 $(bufferd_output)
 </match>
