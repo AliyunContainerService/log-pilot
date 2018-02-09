@@ -43,10 +43,21 @@ ${FLUENTD_NUM_THREADS:+num_threads $FLUENTD_NUM_THREADS}
 EOF
 }
 
-fluentd_log(){
-cat << EOF
-${FLUENTD_LOG_LEVEL:+log_level $FLUENTD_LOG_LEVEL}
+fluentd_options(){
+cat >> $FLUENTD_CONFIG << EOF
+<system>
+${FLUENTD_LOG_LEVEL:+@log_level $FLUENTD_LOG_LEVEL}
+</system>
 EOF
+if [ "$FLUENTD_ENABLE_MONITOR" == "true" ]; then
+cat >> $FLUENTD_CONFIG << EOF
+<source>
+    @type monitor_agent
+    bind 0.0.0.0
+    port 24220
+</source>
+EOF
+fi
 }
 
 es(){
@@ -69,7 +80,6 @@ ${ELASTICSEARCH_SSL_VERIFY:+ssl_verify ${ELASTICSEARCH_SSL_VERIFY}}
 target_index_key @target
 type_name fluentd
 $(bufferd_output)
-$(fluentd_log)
 </match>
 EOF
 }
@@ -79,7 +89,6 @@ echo "use default output"
 cat >> $FLUENTD_CONFIG << EOF
 <match docker.**>
 @type stdout
-$(fluentd_log)
 </match>
 EOF
 }
@@ -102,7 +111,6 @@ ${FILE_COMPRESS:+compress ${FILE_COMPRESS}}
   timekey_wait ${FILE_BUFFER_TIME_KEY_WAIT:=5m}
   timekey_use_utc ${FILE_BUFFER_TIME_KEY_USE_UTC:=false}
   $(bufferd_output)
-  $(fluentd_log)
 </buffer>
 </match>
 EOF
@@ -119,7 +127,6 @@ port $GRAYLOG_PORT
 protocol ${GRAYLOG_PROTOCOL:-udp}
 flush_interval 3s
 $(bufferd_output)
-$(fluentd_log)
 </match>
 EOF
 }
@@ -147,7 +154,6 @@ need_create_logstore ${ALIYUNSLS_NEED_CREATE_LOGSTORE:-false}
 create_logstore_ttl  ${ALIYUNSLS_CREATE_LOGSTORE_TTL:-1}
 create_logstore_shard_count ${ALIYUNSLS_CREATE_LOGSTORE_SHARD_COUNT:-2}
 $(bufferd_output)
-$(fluentd_log)
 </match>
 EOF
 }
@@ -192,7 +198,6 @@ ${KAFKA_KAFKA_AGG_MAX_MESSAGES:+kafka_agg_max_messages $KAFKA_KAFKA_AGG_MAX_MESS
 ${KAFKA_MAX_SEND_LIMIT_BYTES:+max_send_limit_bytes $KAFKA_MAX_SEND_LIMIT_BYTES}
 ${KAFKA_DISCARD_KAFKA_DELIVERY_FAILED:+discard_kafka_delivery_failed $KAFKA_DISCARD_KAFKA_DELIVERY_FAILED}
 $(bufferd_output)
-$(fluentd_log)
 </match>
 EOF
 }
@@ -201,10 +206,22 @@ null(){
 cat >> $FLUENTD_CONFIG << EOF
 <match docker.**>
 @type null
-$(fluentd_log)
 </match>
 EOF
+}
 
+flowcounter() {
+cat >> $FLUENTD_CONFIG << EOF
+<match docker.**>
+@type flowcounter
+tag flowcounter
+count_interval 30s
+aggregate all
+</match>
+<match flowcounter>
+@type stdout
+</match>
+EOF
 }
 
 case "$FLUENTD_OUTPUT" in
@@ -222,6 +239,10 @@ case "$FLUENTD_OUTPUT" in
         kafka;;
     null)
         null;;
+    flowcounter)
+        flowcounter;;
     *)
         default
 esac
+
+fluentd_options
