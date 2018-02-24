@@ -23,7 +23,7 @@ spec:
           - name: "FLUENTD_OUTPUT"
             value: "kafka"
           - name: "KAFKA_BROKERS"
-            value: "{kafka1:9092,kafka2:9092}" #changeme
+            value: "kafka1:9092,kafka2:9092" #changeme
         volumeMounts:
         - name: sock
           mountPath: /var/run/docker.sock
