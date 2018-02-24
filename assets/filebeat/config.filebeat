@@ -24,12 +24,12 @@ path.home: /usr/share/filebeat
 path.config: /usr/share/filebeat
 path.data: /usr/share/filebeat/data
 filebeat.registry_file: /usr/share/filebeat/registry
-filebeat.shutdown_timeout: ${FILEBEAT_SHUTDOWN_TIMEOUT:=0}
-logging.level: info
+filebeat.shutdown_timeout: ${FILEBEAT_SHUTDOWN_TIMEOUT:-0}
+logging.level: ${FILEBEAT_LOG_LEVEL:-info}
 logging.metrics.enabled: true
 ${FILEBEAT_MAX_PROCS:+max_procs: ${FILEBEAT_MAX_PROCS}}
-setup.template.name: "${FILEBEAT_INDEX:=filebeat}"
-setup.template.pattern: "${FILEBEAT_INDEX:=filebeat}-*"
+setup.template.name: "${FILEBEAT_INDEX:-filebeat}"
+setup.template.pattern: "${FILEBEAT_INDEX:-filebeat}-*"
 filebeat.config:
     prospectors:
         enabled: true
