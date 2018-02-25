@@ -167,6 +167,7 @@ type LogConfig struct {
 	Tags         map[string]string
 	Target       string
 	EstimateTime bool
+	Stdout       bool
 }
 
 func (p *Pilot) cleanConfigs() error {
@@ -510,6 +511,23 @@ func (p *Pilot) parseLogConfig(name string, info *LogInfoNode, jsonLogPath strin
 		}
 	}
 
+
+	format := info.children["format"]
+	if format == nil || format.value == "none" {
+		format = newLogInfoNode("nonex")
+	}
+
+	formatConfig, err := Convert(format)
+	if err != nil {
+		return nil, fmt.Errorf("in log %s: format error: %v", name, err)
+	}
+
+	//特殊处理regex
+	if format.value == "regexp" {
+		format.value = fmt.Sprintf("/%s/", formatConfig["pattern"])
+		delete(formatConfig, "pattern")
+	}
+
 	if path == "stdout" {
 		logFile := filepath.Base(jsonLogPath)
 		if p.piloter.Name() == PILOT_FILEBEAT {
@@ -519,12 +537,13 @@ func (p *Pilot) parseLogConfig(name string, info *LogInfoNode, jsonLogPath strin
 		return &LogConfig{
 			Name:         name,
 			HostDir:      filepath.Join(p.base, filepath.Dir(jsonLogPath)),
-			Format:       "json",
 			File:         logFile,
+			Format:       format.value,
 			Tags:         tagMap,
 			FormatConfig: map[string]string{"time_format": "%Y-%m-%dT%H:%M:%S.%NZ"},
 			Target:       target,
 			EstimateTime: false,
+			Stdout:       true,
 		}, nil
 	}
 
@@ -540,22 +559,6 @@ func (p *Pilot) parseLogConfig(name string, info *LogInfoNode, jsonLogPath strin
 	hostDir := p.hostDirOf(containerDir, mounts)
 	if hostDir == "" {
 		return nil, fmt.Errorf("in log %s: %s is not mount on host", name, path)
-	}
-
-	format := info.children["format"]
-	if format == nil || format.value == "none"{
-		format = newLogInfoNode("nonex")
-	}
-
-	formatConfig, err := Convert(format)
-	if err != nil {
-		return nil, fmt.Errorf("in log %s: format error: %v", name, err)
-	}
-
-	//特殊处理regex
-	if format.value == "regexp" {
-		format.value = fmt.Sprintf("/%s/", formatConfig["pattern"])
-		delete(formatConfig, "pattern")
 	}
 
 	cfg := &LogConfig{

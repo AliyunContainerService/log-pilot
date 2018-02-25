@@ -5,7 +5,11 @@
   path {{ .HostDir }}/{{ .File }}
 
   <parse>
+  {{if .Stdout}}
+  @type json
+  {{else}}
   @type {{ .Format }}
+  {{end}}
   {{ $time_key := "" }}
   {{if .FormatConfig}}
   {{range $key, $value := .FormatConfig}}

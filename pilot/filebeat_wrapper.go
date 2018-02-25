@@ -13,14 +13,12 @@ import (
 )
 
 const PILOT_FILEBEAT = "filebeat"
-const FILEBEAT_HOME = "/usr/share/filebeat"
-const FILEBEAT_CONF_HOME = FILEBEAT_HOME
+const FILEBEAT_HOME = "/usr/local/filebeat"
+const FILEBEAT_CONF_HOME = "/etc/filebeat"
 const FILEBEAT_CONF_DIR = FILEBEAT_CONF_HOME + "/prospectors.d"
 const FILEBEAT_CONF_FILE = FILEBEAT_CONF_HOME + "/filebeat.yml"
-const FILEBEAT_LOG_DIR = FILEBEAT_HOME + "/logs"
-const FILEBEAT_DATA_DIR = FILEBEAT_HOME + "/data"
 const FILEBEAT_EXEC_BIN = FILEBEAT_HOME + "/filebeat"
-const FILEBEAT_REGISTRY_FILE = FILEBEAT_HOME + "/registry"
+const FILEBEAT_REGISTRY_FILE = "/var/lib/filebeat/registry"
 
 var filebeat *exec.Cmd
 
