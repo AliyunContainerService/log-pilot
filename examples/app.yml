@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx
+spec:
+  tolerations:
+  - key: "node-role.kubernetes.io/master"
+    effect: "NoSchedule"
+  containers:
+  - name: log
+    image: registry.cn-hangzhou.aliyuncs.com/jiangjizhong/log
+    env:
+    - name: aliyun_logs_mylog
+      value: stdout
+    - name: aliyun_logs_mylog_format
+      value: json

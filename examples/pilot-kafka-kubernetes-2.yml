@@ -16,6 +16,7 @@ spec:
       tolerations:
       - key: node-role.kubernetes.io/master
         effect: NoSchedule
+      hostNetwork: true
       containers:
       - name: log-pilot
         image: registry.cn-hangzhou.aliyuncs.com/acs-sample/log-pilot:0.9.1-filebeat
@@ -23,15 +24,16 @@ spec:
           - name: "FILEBEAT_OUTPUT"
             value: "kafka"
           - name: "KAFKA_BROKERS"
-            value: "kafka1:9092,kafka2:9092" #changeme
+            value: "kafka1:9092,kafka2:9092" 
         volumeMounts:
         - name: sock
           mountPath: /var/run/docker.sock
         - name: logs
           mountPath: /var/log/filebeat
-          readOnly: true
         - name: state
           mountPath: /var/lib/filebeat
+        - name: root
+          mountPath: /host
         securityContext:
           capabilities:
             add:
@@ -47,4 +49,7 @@ spec:
       - name: state
         hostPath:
           path: /var/lib/filebeat
+      - name: root
+        hostPath:
+          path: /
 
