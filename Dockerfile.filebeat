@@ -27,6 +27,8 @@ RUN apk update && \
 
 COPY --from=builder /go/bin/log-pilot /pilot/pilot
 COPY assets/entrypoint assets/filebeat/ /pilot/
+VOLUME /var/log/filebeat
+VOLUME /var/lib/filebeat
 
 WORKDIR /pilot/
 ENV PILOT_TYPE=filebeat
