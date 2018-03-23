@@ -1,4 +1,4 @@
-tomcat:
+tomcat2:
   image: tomcat
   ports:
     - "8080"
@@ -7,6 +7,6 @@ tomcat:
     - /tmp/tomcat:/usr/local/tomcat/logs
   labels:
     aliyun.logs.catalina: stdout
-    aliyun.logs.catalina.tags: app=tomcat,stage=test
+    aliyun.logs.catalina.tags: app=tomcat2,stage=test
     custom.logs.access: /usr/local/tomcat/logs/catalina.*.log
-    custom.logs.access.tags: app=tomcat,stage=test,index=tomcat,topic=tomcat
+    custom.logs.access.tags: app=tomcat2,stage=test,index=tomcat,topic=tomcat

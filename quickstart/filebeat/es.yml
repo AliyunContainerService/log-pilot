@@ -21,6 +21,8 @@ services:
     privileged: true
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+      - /var/lib/filebeat:/var/lib/filebeat
+      - /var/log/filebeat:/var/log/filebeat
       - /:/host
     environment:
       PILOT_TYPE: filebeat

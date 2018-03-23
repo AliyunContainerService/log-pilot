@@ -10,28 +10,36 @@ import (
 	"os/exec"
 	"path/filepath"
 	"time"
+	"regexp"
+	"io/ioutil"
+	"strings"
 )
 
 const PILOT_FILEBEAT = "filebeat"
-const FILEBEAT_HOME = "/usr/local/filebeat"
+const FILEBEAT_EXEC_BIN = "/usr/bin/filebeat"
 const FILEBEAT_CONF_HOME = "/etc/filebeat"
 const FILEBEAT_CONF_DIR = FILEBEAT_CONF_HOME + "/prospectors.d"
 const FILEBEAT_CONF_FILE = FILEBEAT_CONF_HOME + "/filebeat.yml"
-const FILEBEAT_EXEC_BIN = FILEBEAT_HOME + "/filebeat"
 const FILEBEAT_REGISTRY_FILE = "/var/lib/filebeat/registry"
+const FILEBEAT_LOG_DIR = "/var/log/filebeat"
+
+const DOCKER_HOME_PATH = "/var/lib/docker/"
+const KUBELET_HOME_PATH = "/var/lib/kubelet/"
 
 var filebeat *exec.Cmd
 
 type FilebeatPiloter struct {
 	name           string
+	base           string
 	watchDone      chan bool
 	watchDuration  time.Duration
 	watchContainer map[string]string
 }
 
-func NewFilebeatPiloter() (Piloter, error) {
+func NewFilebeatPiloter(base string) (Piloter, error) {
 	return &FilebeatPiloter{
 		name:           PILOT_FILEBEAT,
+		base:           base,
 		watchDone:      make(chan bool),
 		watchContainer: make(map[string]string, 0),
 		watchDuration:  60 * time.Second,
@@ -86,65 +94,106 @@ func (p *FilebeatPiloter) scan() error {
 		return nil
 	}
 
+	configPaths := p.loadConfigPaths()
 	for container := range p.watchContainer {
 		confPath := p.ConfPathOf(container)
 		if _, err := os.Stat(confPath); err != nil && os.IsNotExist(err) {
-			log.Infof("log config %s.yml has removed and ignore", container)
+			log.Infof("log config %s.yml has been removed and ignore", container)
 			delete(p.watchContainer, container)
-			continue
-		}
-
-		c, err := yaml.NewConfigWithFile(confPath, configOpts...)
-		if err != nil {
-			log.Errorf("read %s.yml log config error: %v", container, err)
-			continue
-		}
-
-		var config Config
-		if err := c.Unpack(&config); err != nil {
-			log.Errorf("parse %s.yml log config error: %v", container, err)
-			continue
-		}
-
-		finished := true
-		for _, path := range config.Paths {
-			log.Debugf("scan %s log path: %s", container, path)
-			files, _ := filepath.Glob(path)
-			for _, file := range files {
-				info, err := os.Stat(file)
-				if err != nil && os.IsNotExist(err) {
-					log.Infof("%s->%s not exist", container, file)
-					continue
-				}
-				if _, ok := states[file]; !ok {
-					log.Infof("%s->%s registry not exist", container, file)
-					continue
-				}
-				if states[file].Offset < info.Size() {
-					log.Infof("%s->%s has not read finished", container, file)
-					finished = false
-					break
-				}
-				log.Infof("%s->%s has read finished", container, file)
-			}
-			if !finished {
-				break
+		} else if p.canRemoveConf(container, states, configPaths) {
+			log.Infof("try to remove log config %s.yml", container)
+			if err := os.Remove(confPath); err != nil {
+				log.Errorf("remove log config %s.yml fail: %v", container, err)
+			} else {
+				delete(p.watchContainer, container)
 			}
 		}
-
-		if !finished {
-			log.Infof("ignore to remove log config %s.yml", container)
-			continue
-		}
-
-		log.Infof("try to remove log config %s.yml", container)
-		if err := os.Remove(confPath); err != nil {
-			log.Errorf("remove log config failure %s.yml", container)
-			continue
-		}
-		delete(p.watchContainer, container)
 	}
 	return nil
+}
+
+func (p *FilebeatPiloter) canRemoveConf(container string, registry map[string]RegistryState,
+	configPaths map[string]string) bool {
+	config, err := p.loadConfig(container)
+	if err != nil {
+		return false
+	}
+
+	for _, path := range config.Paths {
+		autoMount := p.isAutoMountPath(filepath.Dir(path))
+		logFiles, _ := filepath.Glob(path)
+		for _, logFile := range logFiles {
+			info, err := os.Stat(logFile)
+			if err != nil && os.IsNotExist(err) {
+				continue
+			}
+			if _, ok := registry[logFile]; !ok {
+				log.Warnf("%s->%s registry not exist", container, logFile)
+				continue
+			}
+			if registry[logFile].Offset < info.Size() {
+				if autoMount { // ephemeral logs
+					log.Infof("%s->%s does not finish to read", container, logFile)
+					return false
+				} else if _, ok := configPaths[path]; !ok { // host path bind
+					log.Infof("%s->%s does not finish to read and not exist in other config",
+						container, logFile)
+					return false
+				}
+			}
+		}
+	}
+	return true
+}
+
+func (p *FilebeatPiloter) loadConfig(container string) (*Config, error) {
+	confPath := p.ConfPathOf(container)
+	c, err := yaml.NewConfigWithFile(confPath, configOpts...)
+	if err != nil {
+		log.Errorf("read %s.yml log config error: %v", container, err)
+		return nil, err
+	}
+
+	var config Config
+	if err := c.Unpack(&config); err != nil {
+		log.Errorf("parse %s.yml log config error: %v", container, err)
+		return nil, err
+	}
+	return &config, nil
+}
+
+func (p *FilebeatPiloter) loadConfigPaths() map[string]string {
+	paths := make(map[string]string, 0)
+	confs, _ := ioutil.ReadDir(p.ConfHome())
+	for _, conf := range confs {
+		container := strings.TrimRight(conf.Name(), ".yml")
+		if _, ok := p.watchContainer[container]; ok {
+			continue // ignore removed container
+		}
+
+		config, err := p.loadConfig(container)
+		if err != nil || config == nil {
+			continue
+		}
+
+		for _, path := range config.Paths {
+			if _, ok := paths[path]; !ok {
+				paths[path] = container
+			}
+		}
+	}
+	return paths
+}
+
+func (p *FilebeatPiloter) isAutoMountPath(path string) bool {
+	dockerVolumePattern := fmt.Sprintf("^%s.*$", filepath.Join(p.base, DOCKER_HOME_PATH))
+	if ok, _ := regexp.MatchString(dockerVolumePattern, path); ok {
+		return true
+	}
+
+	kubeletVolumePattern := fmt.Sprintf("^%s.*$", filepath.Join(p.base, KUBELET_HOME_PATH))
+	ok, _ := regexp.MatchString(kubeletVolumePattern, path)
+	return ok
 }
 
 func (p *FilebeatPiloter) getRegsitryState() (map[string]RegistryState, error) {

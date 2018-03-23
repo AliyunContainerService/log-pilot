@@ -98,7 +98,7 @@ func New(tplStr string, baseDir string) (*Pilot, error) {
 
 	piloter, _ := NewFluentdPiloter()
 	if os.Getenv(ENV_PILOT_TYPE) == PILOT_FILEBEAT {
-		piloter, _ = NewFilebeatPiloter()
+		piloter, _ = NewFilebeatPiloter(baseDir)
 	}
 
 	logPrefix := []string{"aliyun"}
@@ -510,7 +510,6 @@ func (p *Pilot) parseLogConfig(name string, info *LogInfoNode, jsonLogPath strin
 			tagMap["topic"] = name
 		}
 	}
-
 
 	format := info.children["format"]
 	if format == nil || format.value == "none" {

@@ -4,6 +4,7 @@ set -e
 
 FILEBEAT_CONFIG=/etc/filebeat/filebeat.yml
 if [ -f "$FILEBEAT_CONFIG" ]; then
+    echo "$FILEBEAT_CONFIG has been existed"
     exit
 fi
 

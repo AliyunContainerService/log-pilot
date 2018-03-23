@@ -19,7 +19,7 @@ spec:
       hostNetwork: true
       containers:
       - name: log-pilot
-        image: registry.cn-hangzhou.aliyuncs.com/acs-sample/log-pilot:0.9.1-filebeat
+        image: registry.cn-hangzhou.aliyuncs.com/acs-sample/log-pilot:0.9-filebeat
         env:
           - name: "FILEBEAT_OUTPUT"
             value: "elasticsearch"

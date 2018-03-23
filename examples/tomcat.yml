@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: tomcat
+spec:
+  tolerations:
+  - key: "node-role.kubernetes.io/master"
+    effect: "NoSchedule"
+  containers:
+  - name: tomcat
+    image: "tomcat:7.0"
+    env:
+    - name: aliyun_logs_catalina
+      value: "stdout"
+    - name: aliyun_logs_access
+      value: "/usr/local/tomcat/logs/catalina.*.log"
+    volumeMounts:
+      - name: tomcat-log
+        mountPath: /usr/local/tomcat/logs
+  volumes:
+    - name: tomcat-log
+      emptyDir: {}
