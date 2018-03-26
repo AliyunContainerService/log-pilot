@@ -6,6 +6,8 @@ metadata:
     k8s-app: log-pilot
     kubernetes.io/cluster-service: "true"
 spec:
+  updateStrategy:
+    type: RollingUpdate
   template:
     metadata:
       labels:
