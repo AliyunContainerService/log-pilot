@@ -17,7 +17,7 @@ services:
       - elasticsearch
 
   pilot:
-    image: pilot:latest
+    image: registry.cn-hangzhou.aliyuncs.com/acs-sample/pilot:latest
     privileged: true
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
