@@ -16,7 +16,6 @@ spec:
       tolerations:
       - key: node-role.kubernetes.io/master
         effect: NoSchedule
-      hostNetwork: true
       containers:
       - name: log-pilot
         image: registry.cn-hangzhou.aliyuncs.com/acs-sample/log-pilot:0.9-filebeat
