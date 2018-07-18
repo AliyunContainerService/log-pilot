@@ -3,7 +3,7 @@ package pilot
 import (
 	"github.com/docker/docker/api/types"
 	log "github.com/sirupsen/logrus"
-	check "gopkg.in/check.v1"
+	"gopkg.in/check.v1"
 	"os"
 	"testing"
 )
@@ -90,6 +90,6 @@ func (p *PilotSuite) TestRender(c *check.C) {
 	}
 	pilot, err := New(template, "/")
 	c.Assert(err, check.IsNil)
-	_, err = pilot.render("id-1111", Source{}, configs)
+	_, err = pilot.render("id-1111", map[string]string{}, configs)
 	c.Assert(err, check.IsNil)
 }

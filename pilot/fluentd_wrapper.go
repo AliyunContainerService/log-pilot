@@ -26,23 +26,36 @@ func NewFluentdPiloter() (Piloter, error) {
 
 func (p *FluentdPiloter) Start() error {
 	if fluentd != nil {
+		pid := fluentd.Process.Pid
+		log.Infof("fluentd started, pid: %v", pid)
 		return fmt.Errorf(ERR_ALREADY_STARTED)
 	}
 
-	log.Info("start fluentd")
-	fluentd = exec.Command("/usr/bin/fluentd", "-c", "/etc/fluentd/fluentd.conf",
+	log.Info("starting fluentd")
+	fluentd = exec.Command("/usr/bin/fluentd",
+		"-c", "/etc/fluentd/fluentd.conf",
 		"-p", "/etc/fluentd/plugins")
 	fluentd.Stderr = os.Stderr
 	fluentd.Stdout = os.Stdout
 	err := fluentd.Start()
 	if err != nil {
-		log.Error(err)
+		log.Errorf("fluentd start fail: %v", err)
 	}
+
 	go func() {
 		err := fluentd.Wait()
 		if err != nil {
-			log.Error(err)
+			log.Errorf("fluentd exited: %v", err)
+			if exitError, ok := err.(*exec.ExitError); ok {
+				processState := exitError.ProcessState
+				log.Errorf("fluentd exited pid: %v", processState.Pid())
+			}
 		}
+
+		// try to restart fluentd
+		log.Warningf("fluentd exited and try to restart")
+		fluentd = nil
+		p.Start()
 	}()
 	return err
 }

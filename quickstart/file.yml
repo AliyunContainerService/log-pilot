@@ -1,13 +1,13 @@
 version: '2'
 services:
   pilot:
-    image: pilot:latest
+    image: log-pilot:latest
     privileged: true
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - /etc/localtime:/etc/localtime
       - /:/host
     environment:
-      FLUENTD_OUTPUT: file
+      LOGGING_OUTPUT: file
       FLUENTD_FLUSH_MODE: immediate
       FILE_PATH: /host/tmp/logs

@@ -11,25 +11,21 @@ services:
         - 5601:5601
     environment:
       ELASTICSEARCH_URL: http://elasticsearch:9200/
-    labels:
-      aliyun.routing.port_5601: kibana
     links:
       - elasticsearch
 
   pilot:
-    image: pilot:latest
+    image: log-pilot:latest
     privileged: true
     volumes:
+      - /etc/localtime:/etc/localtime
       - /var/run/docker.sock:/var/run/docker.sock
       - /var/lib/filebeat:/var/lib/filebeat
       - /var/log/filebeat:/var/log/filebeat
       - /:/host
     environment:
-      PILOT_TYPE: filebeat
+      LOGGING_OUTPUT: elasticsearch
       PILOT_LOG_PREFIX: "aliyun,custom"
-      FILEBEAT_OUTPUT: elasticsearch
-      ELASTICSEARCH_HOST: elasticsearch
-      ELASTICSEARCH_PORT: 9200
+      ELASTICSEARCH_HOSTS: elasticsearch:9200
     links:
       - elasticsearch
-

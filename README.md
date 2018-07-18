@@ -15,7 +15,11 @@ Prerequisites:
 
 ```
 git clone git@github.com:AliyunContainerService/log-pilot.git
-cd log-pilot/quickstart
+# build log-pilot image
+cd log-pilot/
+./build.sh
+# quick start
+cd ../quickstart/
 ./run
 ```
 
@@ -73,8 +77,9 @@ Prerequisites:
 
 ```
 go get github.com/AliyunContainerService/log-pilot
-cd $GOPATH/github.com/AliyunContainerService/log-pilot/docker-images
-./build.sh # This will create a new docker image named pilot:latest
+cd $GOPATH/github.com/AliyunContainerService/log-pilot
+# This will create a new docker image named log-pilot:latest
+./build.sh
 ```
 
 Contribute

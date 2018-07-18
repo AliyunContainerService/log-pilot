@@ -229,23 +229,35 @@ func (p *FilebeatPiloter) feed(containerID string) error {
 
 func (p *FilebeatPiloter) Start() error {
 	if filebeat != nil {
+		pid := filebeat.Process.Pid
+		log.Infof("filebeat started, pid: %v", pid)
 		return fmt.Errorf(ERR_ALREADY_STARTED)
 	}
 
-	log.Info("start filebeat")
+	log.Info("starting filebeat")
 	filebeat = exec.Command(FILEBEAT_EXEC_BIN, "-c", FILEBEAT_CONF_FILE)
 	filebeat.Stderr = os.Stderr
 	filebeat.Stdout = os.Stdout
 	err := filebeat.Start()
 	if err != nil {
-		log.Error(err)
+		log.Errorf("filebeat start fail: %v", err)
 	}
 
 	go func() {
+		log.Infof("filebeat started: %v", filebeat.Process.Pid)
 		err := filebeat.Wait()
 		if err != nil {
-			log.Error(err)
+			log.Errorf("filebeat exited: %v", err)
+			if exitError, ok := err.(*exec.ExitError); ok {
+				processState := exitError.ProcessState
+				log.Errorf("filebeat exited pid: %v", processState.Pid())
+			}
 		}
+
+		// try to restart filebeat
+		log.Warningf("filebeat exited and try to restart")
+		filebeat = nil
+		p.Start()
 	}()
 
 	go p.watch()

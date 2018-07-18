@@ -62,15 +62,20 @@ fi
 
 es(){
 if [ -f "/run/secrets/es_credential" ];then
-ELASTICSEARCH_USER=$(cat /run/secrets/es_credential | awk -F":" '{ print $1 }')
-ELASTICSEARCH_PASSWORD=$(cat /run/secrets/es_credential | awk -F":" '{ print $2 }')
+    ELASTICSEARCH_USER=$(cat /run/secrets/es_credential | awk -F":" '{ print $1 }')
+    ELASTICSEARCH_PASSWORD=$(cat /run/secrets/es_credential | awk -F":" '{ print $2 }')
 fi
-assert_not_empty "$ELASTICSEARCH_HOST" "ELASTICSEARCH_HOST required"
-assert_not_empty "$ELASTICSEARCH_PORT" "ELASTICSEARCH_PORT required"
+
+if [ -z "$ELASTICSEARCH_HOSTS" ]; then
+    assert_not_empty "$ELASTICSEARCH_HOST" "ELASTICSEARCH_HOST required"
+    assert_not_empty "$ELASTICSEARCH_PORT" "ELASTICSEARCH_PORT required"
+    ELASTICSEARCH_HOSTS="$ELASTICSEARCH_HOST:$ELASTICSEARCH_PORT"
+fi
+
 cat >> $FLUENTD_CONFIG << EOF
 <match docker.**>
 @type elasticsearch
-hosts $ELASTICSEARCH_HOST:$ELASTICSEARCH_PORT
+hosts $ELASTICSEARCH_HOSTS
 reconnect_on_error true
 ${ELASTICSEARCH_USER:+user ${ELASTICSEARCH_USER}}
 ${ELASTICSEARCH_PASSWORD:+password ${ELASTICSEARCH_PASSWORD}}
@@ -133,9 +138,10 @@ EOF
 
 aliyun_sls(){
 if [ -f "/run/secrets/aliyun_access_key" ];then
-ALIYUNSLS_ACCESS_KEY_ID=$(cat /run/secrets/aliyun_access_key | awk -F":" '{ print $1 }')
-ALIYUNSLS_ACCESS_KEY_SECRET=$(cat /run/secrets/aliyun_access_key | awk -F":" '{ print $2 }')
+    ALIYUNSLS_ACCESS_KEY_ID=$(cat /run/secrets/aliyun_access_key | awk -F":" '{ print $1 }')
+    ALIYUNSLS_ACCESS_KEY_SECRET=$(cat /run/secrets/aliyun_access_key | awk -F":" '{ print $2 }')
 fi
+
 assert_not_empty "$ALIYUNSLS_PROJECT"         "ALIYUNSLS_PROJECT required"
 assert_not_empty "$ALIYUNSLS_REGION_ENDPOINT" "ALIYUNSLS_REGION_ENDPOINT required"
 assert_not_empty "$ALIYUNSLS_ACCESS_KEY_ID"   "ALIYUNSLS_ACCESS_KEY_ID required"
@@ -224,7 +230,11 @@ aggregate all
 EOF
 }
 
-case "$FLUENTD_OUTPUT" in
+if [ -n "$FLUENTD_OUTPUT" ]; then
+    LOGGING_OUTPUT="$FLUENTD_OUTPUT"
+fi
+
+case "$LOGGING_OUTPUT" in
     elasticsearch)
         es;;
     graylog)

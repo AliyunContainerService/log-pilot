@@ -4,14 +4,11 @@ metadata:
   name: log-pilot
   labels:
     k8s-app: log-pilot
-    kubernetes.io/cluster-service: "true"
 spec:
   template:
     metadata:
       labels:
         k8s-app: log-pilot
-        kubernetes.io/cluster-service: "true"
-        version: v1.22
     spec:
       tolerations:
       - key: node-role.kubernetes.io/master
@@ -20,10 +17,14 @@ spec:
       - name: log-pilot
         image: registry.cn-hangzhou.aliyuncs.com/acs-sample/log-pilot:0.9-filebeat
         env:
-          - name: "FILEBEAT_OUTPUT"
+          - name: "LOGGING_OUTPUT"
             value: "kafka"
           - name: "KAFKA_BROKERS"
-            value: "kafka1:9092,kafka2:9092" 
+            value: "kafka1:9092,kafka2:9092"
+          - name: "NODE_NAME"
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
         volumeMounts:
         - name: sock
           mountPath: /var/run/docker.sock
@@ -51,4 +52,3 @@ spec:
       - name: root
         hostPath:
           path: /
-

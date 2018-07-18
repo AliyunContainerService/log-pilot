@@ -13,4 +13,3 @@ tomcat:
     com.aliyun.access.cluster: c1
     com.aliyun.access.owner: owner
     com.aliyun.access.stage: prod
-

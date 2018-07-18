@@ -4,14 +4,11 @@ metadata:
   name: log-pilot
   labels:
     k8s-app: log-pilot
-    kubernetes.io/cluster-service: "true"
 spec:
   template:
     metadata:
       labels:
         k8s-app: log-pilot
-        kubernetes.io/cluster-service: "true"
-        version: v1.22
     spec:
       tolerations:
       - key: node-role.kubernetes.io/master
@@ -20,12 +17,14 @@ spec:
       - name: log-pilot
         image: registry.cn-hangzhou.aliyuncs.com/acs-sample/log-pilot:0.9-filebeat
         env:
-          - name: "FILEBEAT_OUTPUT"
+          - name: "LOGGING_OUTPUT"
             value: "elasticsearch"
-          - name: "ELASTICSEARCH_HOST"
-            value: "changeme" 
-          - name: "ELASTICSEARCH_PORT"
-            value: "9092" 
+          - name: "ELASTICSEARCH_HOSTS"
+            value: "elasticsearch1:9200,elasticsearch2:9200"
+          - name: "NODE_NAME"
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
         volumeMounts:
         - name: sock
           mountPath: /var/run/docker.sock
@@ -53,4 +52,3 @@ spec:
       - name: root
         hostPath:
           path: /
-

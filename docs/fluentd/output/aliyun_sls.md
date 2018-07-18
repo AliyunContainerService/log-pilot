@@ -2,7 +2,7 @@
 
 #### Environment variables for image `fluentd`
 
-- FLUENTD_OUTPUT=aliyun_sls  # Required, specify your output plugin name
+- LOGGING_OUTPUT=aliyun_sls  # Required, specify your output plugin name
 - ALIYUNSLS_PROJECT=test-fluentd  # Required, specify your aliyun sls project name
 - ALIYUNSLS_REGION_ENDPOINT=cn-hangzhou.log.aliyuncs.com  # Required, specify your region root endpoint
 - ALIYUNSLS_ACCESS_KEY_ID="your aliyun access key id"     # Required 
@@ -35,7 +35,7 @@ swm2ft9bzaxyyi9umwbb0mdd6   aliyun_access_key   53 minutes ago      53 minutes a
 docker run --rm -it \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -v /:/host \
-    -e FLUENTD_OUTPUT=aliyun_sls \
+    -e LOGGING_OUTPUT=aliyun_sls \
     -e ALIYUNSLS_PROJECT="your-aliyun-sls-project-name"  \
     -e ALIYUNSLS_REGION_ENDPOINT=cn-hangzhou.log.aliyuncs.com \
     -e ALIYUNSLS_ACCESS_KEY_ID="your-access-key-id" \
@@ -63,7 +63,7 @@ $ docker service create    -t \
     --mount type=bind,source=/var/run/docker.sock,destination=/var/run/docker.sock \
     --mount type=bind,source=/,destination=/host \
     --secret="aliyun_access_key" \
-    -e FLUENTD_OUTPUT=aliyun_sls \
+    -e LOGGING_OUTPUT=aliyun_sls \
     -e ALIYUNSLS_PROJECT="your-aliyun-sls-project-name"  \
     -e ALIYUNSLS_REGION_ENDPOINT=cn-hangzhou.log.aliyuncs.com \
     registry.cn-hangzhou.aliyuncs.com/acs-sample/fluentd-pilot:latest

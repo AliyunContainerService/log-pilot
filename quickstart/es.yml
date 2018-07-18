@@ -11,21 +11,18 @@ services:
         - 5601:5601
     environment:
       ELASTICSEARCH_URL: http://elasticsearch:9200/
-    labels:
-      aliyun.routing.port_5601: kibana
     links:
       - elasticsearch
 
   pilot:
-    image: pilot:latest
+    image: log-pilot:latest
     privileged: true
     volumes:
+      - /etc/localtime:/etc/localtime
       - /var/run/docker.sock:/var/run/docker.sock
       - /:/host
     environment:
-      FLUENTD_OUTPUT: elasticsearch
-      ELASTICSEARCH_HOST: elasticsearch
-      ELASTICSEARCH_PORT: 9200
+      LOGGING_OUTPUT: elasticsearch
+      ELASTICSEARCH_HOSTS: elasticsearch:9200
     links:
       - elasticsearch
-

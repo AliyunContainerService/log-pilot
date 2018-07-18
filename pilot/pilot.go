@@ -33,6 +33,7 @@ const ENV_PILOT_TYPE = "PILOT_TYPE"
 const ENV_PILOT_CREATE_SYMLINK = "PILOT_CREATE_SYMLINK"
 const ENV_FLUENTD_OUTPUT = "FLUENTD_OUTPUT"
 const ENV_FILEBEAT_OUTPUT = "FILEBEAT_OUTPUT"
+const ENV_LOGGING_OUTPUT = "LOGGING_OUTPUT"
 
 const LABEL_SERVICE_LOGS_TEMPL = "%s.logs."
 const ENV_SERVICE_LOGS_TEMPL = "%s_logs_"
@@ -493,7 +494,6 @@ func (p *Pilot) parseLogConfig(name string, info *LogInfoNode, jsonLogPath strin
 	}
 
 	target := info.get("target")
-
 	// add default index or topic
 	if _, ok := tagMap["index"]; !ok {
 		if target != "" {
@@ -549,6 +549,7 @@ func (p *Pilot) parseLogConfig(name string, info *LogInfoNode, jsonLogPath strin
 	if !filepath.IsAbs(path) {
 		return nil, fmt.Errorf("%s must be absolute path, for %s", path, name)
 	}
+
 	containerDir := filepath.Dir(path)
 	file := filepath.Base(path)
 	if file == "" {
@@ -570,6 +571,7 @@ func (p *Pilot) parseLogConfig(name string, info *LogInfoNode, jsonLogPath strin
 		FormatConfig: formatConfig,
 		Target:       target,
 	}
+
 	if formatConfig["time_key"] == "" {
 		cfg.EstimateTime = true
 		cfg.FormatConfig["time_key"] = "_timestamp"
@@ -669,6 +671,9 @@ func (p *Pilot) render(containerId string, container map[string]string, configLi
 	output := os.Getenv(ENV_FLUENTD_OUTPUT)
 	if p.piloter.Name() == PILOT_FILEBEAT {
 		output = os.Getenv(ENV_FILEBEAT_OUTPUT)
+	}
+	if output == "" {
+		output = os.Getenv(ENV_LOGGING_OUTPUT)
 	}
 
 	var buf bytes.Buffer

@@ -18,7 +18,7 @@ docker-compose -p quickstart -f file.yml up -d
 
 host=127.0.0.1
 
-if [ -n "DOCKER_HOST" ]; then
+if [ -n "$DOCKER_HOST" ]; then
     host=$(echo $DOCKER_HOST|sed -e 's:^.*//::' -e 's/:.*$//')
 fi
 

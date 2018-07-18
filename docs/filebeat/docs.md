@@ -31,7 +31,7 @@ docker run --rm -it \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -v /:/host \
     -e PILOT_TYPE=filebeat \
-    -e FILEBEAT_OUTPUT=elasticsearch \
+    -e LOGGING_OUTPUT=elasticsearch \
     -e ELASTICSEARCH_HOST=${ELASTICSEARCH_HOST} \
     -e ELASTICSEARCH_PORT=${ELASTICSEARCH_PORT} \
     registry.cn-hangzhou.aliyuncs.com/acs-sample/log-pilot:latest
@@ -40,7 +40,7 @@ docker run --rm -it \
 Log output plugin configuration
 ===============================
 
-You can config the environment variable ```FILEBEAT_OUTPUT ``` to determine which log management will be output.
+You can config the environment variable ```LOGGING_OUTPUT ``` to determine which log management will be output.
 
 ### Supported log management
 
