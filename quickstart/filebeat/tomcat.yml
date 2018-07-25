@@ -4,7 +4,7 @@ tomcat:
     - "8080"
   restart: always
   volumes:
-    - /tmp/tomcat:/usr/local/tomcat/logs
+    - /tomcat:/usr/local/tomcat/logs
   labels:
     aliyun.logs.catalina: stdout
     aliyun.logs.catalina.tags: app=tomcat,stage=test

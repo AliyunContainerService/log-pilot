@@ -46,10 +46,12 @@ done
 blue "\nCleanup"
 docker-compose -p tomcat -f tomcat.yml down
 docker-compose -p tomcat2 -f tomcat2.yml down
+#docker-compose -p busybox -f busybox.yml down
 
 blue "Starting tomcat"
 docker-compose -p tomcat -f tomcat.yml up -d
 docker-compose -p tomcat2 -f tomcat2.yml up -d
+#docker-compose -p busybox -f busybox.yml up -d
 
 pwd=$(pwd)
 project=$(basename $pwd)
