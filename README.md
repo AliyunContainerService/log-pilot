@@ -39,7 +39,7 @@ Quickstart
 ```
 docker run --rm -it \
     -v /var/run/docker.sock:/var/run/docker.sock \
-    -v /:/host \
+    -v /:/host:ro \
     registry.cn-hangzhou.aliyuncs.com/acs-sample/log-pilot:latest
 ```
 

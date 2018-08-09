@@ -22,7 +22,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - /var/lib/filebeat:/var/lib/filebeat
       - /var/log/filebeat:/var/log/filebeat
-      - /:/host
+      - /:/host:ro
     environment:
       LOGGING_OUTPUT: elasticsearch
       PILOT_LOG_PREFIX: "aliyun,custom"

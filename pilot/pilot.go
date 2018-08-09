@@ -206,10 +206,11 @@ func (p *Pilot) processAllContainers() error {
 	opts := types.ContainerListOptions{}
 	containers, err := p.client().ContainerList(context.Background(), opts)
 	if err != nil {
-		return err
+		log.Errorf("fail to list container: %v", err)
+		return nil
 	}
 
-	//clean config
+	// clean config
 	if err := p.cleanConfigs(); err != nil {
 		return err
 	}
@@ -224,7 +225,8 @@ func (p *Pilot) processAllContainers() error {
 		}
 		containerJSON, err := p.client().ContainerInspect(context.Background(), c.ID)
 		if err != nil {
-			return err
+			log.Errorf("fail to inspect container %s: %v", c.ID, err)
+			continue
 		}
 		if err = p.newContainer(&containerJSON); err != nil {
 			log.Errorf("fail to process container %s: %v", containerJSON.Name, err)

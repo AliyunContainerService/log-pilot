@@ -20,7 +20,7 @@ services:
     volumes:
       - /etc/localtime:/etc/localtime
       - /var/run/docker.sock:/var/run/docker.sock
-      - /:/host
+      - /:/host:ro
     environment:
       LOGGING_OUTPUT: elasticsearch
       ELASTICSEARCH_HOSTS: elasticsearch:9200

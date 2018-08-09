@@ -15,7 +15,7 @@ You must set environment variable ```PILOT_TYPE=filebeat``` to enable filebeat p
 ```
 docker run --rm -it \
    -v /var/run/docker.sock:/var/run/docker.sock \
-   -v /:/host \
+   -v /:/host:ro \
    -e PILOT_TYPE=filebeat \
    registry.cn-hangzhou.aliyuncs.com/acs-sample/log-pilot:latest
 ```
@@ -29,7 +29,7 @@ The command below run pilot with elastichsearch output, this makes log-pilot sen
 ```
 docker run --rm -it \
     -v /var/run/docker.sock:/var/run/docker.sock \
-    -v /:/host \
+    -v /:/host:ro \
     -e PILOT_TYPE=filebeat \
     -e LOGGING_OUTPUT=elasticsearch \
     -e ELASTICSEARCH_HOST=${ELASTICSEARCH_HOST} \

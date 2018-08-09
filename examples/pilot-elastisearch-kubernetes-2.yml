@@ -34,6 +34,7 @@ spec:
           mountPath: /var/lib/filebeat
         - name: root
           mountPath: /host
+          readOnly: true
         securityContext:
           capabilities:
             add:

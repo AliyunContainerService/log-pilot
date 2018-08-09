@@ -3,8 +3,7 @@ FROM golang:1.9-alpine3.6 as builder
 ENV PILOT_DIR /go/src/github.com/AliyunContainerService/log-pilot
 ARG GOOS=linux
 ARG GOARCH=amd64
-RUN set -ex \
-    && apk add --no-cache make git
+RUN set -ex && apk add --no-cache make git
 WORKDIR $PILOT_DIR
 COPY . $PILOT_DIR
 RUN go install 
@@ -30,7 +29,7 @@ RUN apk update && \
     rm -rf /var/cache/apk/* /tmp/filebeat-${FILEBEAT_VERSION}-linux-x86_64.tar.gz /tmp/filebeat-${FILEBEAT_VERSION}-linux-x86_64 /tmp/glibc-2.26-r0.apk
 
 COPY --from=builder /go/bin/log-pilot /pilot/pilot
-COPY assets/entrypoint assets/filebeat/ /pilot/
+COPY assets/entrypoint assets/filebeat/ assets/healthz /pilot/
 VOLUME /var/log/filebeat
 VOLUME /var/lib/filebeat
 
