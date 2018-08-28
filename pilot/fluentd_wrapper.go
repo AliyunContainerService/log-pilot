@@ -80,7 +80,7 @@ func (p *FluentdPiloter) Reload() error {
 		fluentd.Process.Signal(syscall.SIGHUP)
 		time.Sleep(5 * time.Second)
 		afterChildId := shell(command)
-		log.Infof("after reload childId : %s", childId)
+		log.Infof("after reload childId : %s", afterChildId)
 		if childId == afterChildId {
 			log.Infof("kill childId : %s", childId)
 			shell("kill -9 " + childId)
