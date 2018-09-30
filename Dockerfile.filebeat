@@ -30,6 +30,11 @@ RUN apk update && \
 
 COPY --from=builder /go/bin/log-pilot /pilot/pilot
 COPY assets/entrypoint assets/filebeat/ assets/healthz /pilot/
+
+RUN chmod +x /pilot/pilot /pilot/entrypoint /pilot/healthz /pilot/config.filebeat
+
+HEALTHCHECK CMD /pilot/healthz
+
 VOLUME /var/log/filebeat
 VOLUME /var/lib/filebeat
 

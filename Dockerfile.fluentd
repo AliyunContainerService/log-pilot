@@ -33,7 +33,11 @@ RUN apk update && \
 
 COPY --from=builder /go/bin/log-pilot /pilot/pilot
 COPY assets/entrypoint assets/fluentd/ assets/healthz /pilot/
-RUN mkdir -p /etc/fluentd && mv /pilot/plugins /etc/fluentd/
+RUN mkdir -p /etc/fluentd && \
+    mv /pilot/plugins /etc/fluentd/ && \
+    chmod +x /pilot/pilot /pilot/entrypoint /pilot/healthz /pilot/config.fluentd
+
+HEALTHCHECK CMD /pilot/healthz
 
 VOLUME /etc/fluentd/conf.d
 VOLUME /pilot/pos
