@@ -37,7 +37,7 @@ Quickstart
 ### Run pilot
 
 ```
-docker run --rm -it \
+docker run --rm -it --privileged \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -v /:/host:ro \
     registry.cn-hangzhou.aliyuncs.com/acs-sample/log-pilot:latest
