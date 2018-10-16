@@ -5,6 +5,8 @@ metadata:
   labels:
     k8s-app: log-pilot
 spec:
+  updateStrategy:
+    type: RollingUpdate
   template:
     metadata:
       labels:
@@ -15,7 +17,7 @@ spec:
         effect: NoSchedule
       containers:
       - name: log-pilot
-        image: registry.cn-hangzhou.aliyuncs.com/acs-sample/log-pilot:0.9-filebeat
+        image: registry.cn-hangzhou.aliyuncs.com/acs/log-pilot:0.9.5-filebeat
         env:
           - name: "LOGGING_OUTPUT"
             value: "elasticsearch"
@@ -35,6 +37,8 @@ spec:
         - name: root
           mountPath: /host
           readOnly: true
+        - name: localtime
+          mountPath: /etc/localtime
         securityContext:
           capabilities:
             add:
@@ -53,3 +57,6 @@ spec:
       - name: root
         hostPath:
           path: /
+      - name: localtime
+        hostPath:
+          path: /etc/localtime

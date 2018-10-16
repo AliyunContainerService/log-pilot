@@ -15,9 +15,10 @@ You must set environment variable ```PILOT_TYPE=fluentd``` to enable fluentd plu
 ```
 docker run --rm -it \
    -v /var/run/docker.sock:/var/run/docker.sock \
+   -v /etc/localtime:/etc/localtime \
    -v /:/host:ro \
-   -e PILOT_TYPE=fluentd \
-   registry.cn-hangzhou.aliyuncs.com/acs-sample/log-pilot:latest
+   --cap-add SYS_ADMIN \
+   registry.cn-hangzhou.aliyuncs.com/acs/log-pilot:0.9.5-fluentd
 ```
 
 By default, all the logs that log-pilot collect will write to log-pilot's stdout. 
@@ -30,11 +31,10 @@ The command below run pilot with elastichsearch output, this makes log-pilot sen
 docker run --rm -it \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -v /:/host:ro \
-    -e PILOT_TYPE=fluentd \
     -e LOGGING_OUTPUT=elasticsearch \
     -e ELASTICSEARCH_HOST=${ELASTICSEARCH_HOST} \
     -e ELASTICSEARCH_PORT=${ELASTICSEARCH_PORT} \
-    registry.cn-hangzhou.aliyuncs.com/acs-sample/log-pilot:latest
+    registry.cn-hangzhou.aliyuncs.com/acs/log-pilot:0.9.5-fluentd
 ```
 
 Log output plugin configuration

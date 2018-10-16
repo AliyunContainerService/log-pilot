@@ -15,31 +15,33 @@ import (
 	"strings"
 )
 
-const PILOT_FILEBEAT = "filebeat"
-const FILEBEAT_EXEC_BIN = "/usr/bin/filebeat"
-const FILEBEAT_CONF_HOME = "/etc/filebeat"
-const FILEBEAT_CONF_DIR = FILEBEAT_CONF_HOME + "/prospectors.d"
-const FILEBEAT_CONF_FILE = FILEBEAT_CONF_HOME + "/filebeat.yml"
-const FILEBEAT_REGISTRY_FILE = "/var/lib/filebeat/registry"
-const FILEBEAT_LOG_DIR = "/var/log/filebeat"
+const (
+	FILEBEAT_EXEC_CMD  = "/usr/bin/filebeat"
+	FILEBEAT_REGISTRY  = "/var/lib/filebeat/registry"
+	FILEBEAT_BASE_CONF = "/etc/filebeat"
+	FILEBEAT_CONF_DIR  = FILEBEAT_BASE_CONF + "/prospectors.d"
+	FILEBEAT_CONF_FILE = FILEBEAT_BASE_CONF + "/filebeat.yml"
 
-const DOCKER_HOME_PATH = "/var/lib/docker/"
-const KUBELET_HOME_PATH = "/var/lib/kubelet/"
+	DOCKER_SYSTEM_PATH  = "/var/lib/docker/"
+	KUBELET_SYSTEM_PATH = "/var/lib/kubelet/"
+
+	ENV_FILEBEAT_OUTPUT = "FILEBEAT_OUTPUT"
+)
 
 var filebeat *exec.Cmd
 
 type FilebeatPiloter struct {
 	name           string
-	base           string
+	baseDir        string
 	watchDone      chan bool
 	watchDuration  time.Duration
 	watchContainer map[string]string
 }
 
-func NewFilebeatPiloter(base string) (Piloter, error) {
+func NewFilebeatPiloter(baseDir string) (Piloter, error) {
 	return &FilebeatPiloter{
 		name:           PILOT_FILEBEAT,
-		base:           base,
+		baseDir:        baseDir,
 		watchDone:      make(chan bool),
 		watchContainer: make(map[string]string, 0),
 		watchDuration:  60 * time.Second,
@@ -96,7 +98,7 @@ func (p *FilebeatPiloter) scan() error {
 
 	configPaths := p.loadConfigPaths()
 	for container := range p.watchContainer {
-		confPath := p.ConfPathOf(container)
+		confPath := p.GetConfPath(container)
 		if _, err := os.Stat(confPath); err != nil && os.IsNotExist(err) {
 			log.Infof("log config %s.yml has been removed and ignore", container)
 			delete(p.watchContainer, container)
@@ -147,7 +149,7 @@ func (p *FilebeatPiloter) canRemoveConf(container string, registry map[string]Re
 }
 
 func (p *FilebeatPiloter) loadConfig(container string) (*Config, error) {
-	confPath := p.ConfPathOf(container)
+	confPath := p.GetConfPath(container)
 	c, err := yaml.NewConfigWithFile(confPath, configOpts...)
 	if err != nil {
 		log.Errorf("read %s.yml log config error: %v", container, err)
@@ -164,7 +166,7 @@ func (p *FilebeatPiloter) loadConfig(container string) (*Config, error) {
 
 func (p *FilebeatPiloter) loadConfigPaths() map[string]string {
 	paths := make(map[string]string, 0)
-	confs, _ := ioutil.ReadDir(p.ConfHome())
+	confs, _ := ioutil.ReadDir(p.GetConfHome())
 	for _, conf := range confs {
 		container := strings.TrimRight(conf.Name(), ".yml")
 		if _, ok := p.watchContainer[container]; ok {
@@ -186,18 +188,18 @@ func (p *FilebeatPiloter) loadConfigPaths() map[string]string {
 }
 
 func (p *FilebeatPiloter) isAutoMountPath(path string) bool {
-	dockerVolumePattern := fmt.Sprintf("^%s.*$", filepath.Join(p.base, DOCKER_HOME_PATH))
+	dockerVolumePattern := fmt.Sprintf("^%s.*$", filepath.Join(p.baseDir, DOCKER_SYSTEM_PATH))
 	if ok, _ := regexp.MatchString(dockerVolumePattern, path); ok {
 		return true
 	}
 
-	kubeletVolumePattern := fmt.Sprintf("^%s.*$", filepath.Join(p.base, KUBELET_HOME_PATH))
+	kubeletVolumePattern := fmt.Sprintf("^%s.*$", filepath.Join(p.baseDir, KUBELET_SYSTEM_PATH))
 	ok, _ := regexp.MatchString(kubeletVolumePattern, path)
 	return ok
 }
 
 func (p *FilebeatPiloter) getRegsitryState() (map[string]RegistryState, error) {
-	f, err := os.Open(FILEBEAT_REGISTRY_FILE)
+	f, err := os.Open(FILEBEAT_REGISTRY)
 	if err != nil {
 		return nil, err
 	}
@@ -235,7 +237,7 @@ func (p *FilebeatPiloter) Start() error {
 	}
 
 	log.Info("starting filebeat")
-	filebeat = exec.Command(FILEBEAT_EXEC_BIN, "-c", FILEBEAT_CONF_FILE)
+	filebeat = exec.Command(FILEBEAT_EXEC_CMD, "-c", FILEBEAT_CONF_FILE)
 	filebeat.Stderr = os.Stderr
 	filebeat.Stdout = os.Stdout
 	err := filebeat.Start()
@@ -270,15 +272,15 @@ func (p *FilebeatPiloter) Stop() error {
 }
 
 func (p *FilebeatPiloter) Reload() error {
-	log.Debug("not need to reload filebeat")
+	log.Debug("do not need to reload filebeat")
 	return nil
 }
 
-func (p *FilebeatPiloter) ConfPathOf(container string) string {
+func (p *FilebeatPiloter) GetConfPath(container string) string {
 	return fmt.Sprintf("%s/%s.yml", FILEBEAT_CONF_DIR, container)
 }
 
-func (p *FilebeatPiloter) ConfHome() string {
+func (p *FilebeatPiloter) GetConfHome() string {
 	return FILEBEAT_CONF_DIR
 }
 

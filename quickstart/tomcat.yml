@@ -10,6 +10,3 @@ tomcat:
     aliyun.logs.catalina.tags: app=tomcat,stage=test
     aliyun.logs.access: /usr/local/tomcat/logs/catalina.*.log
     aliyun.logs.access.tags: app=tomcat,stage=test
-    com.aliyun.access.cluster: c1
-    com.aliyun.access.owner: owner
-    com.aliyun.access.stage: prod

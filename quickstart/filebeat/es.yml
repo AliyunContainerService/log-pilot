@@ -16,13 +16,14 @@ services:
 
   pilot:
     image: log-pilot:latest
-    privileged: true
     volumes:
       - /etc/localtime:/etc/localtime
       - /var/run/docker.sock:/var/run/docker.sock
       - /var/lib/filebeat:/var/lib/filebeat
       - /var/log/filebeat:/var/log/filebeat
       - /:/host:ro
+    cap_add:
+      - SYS_ADMIN
     environment:
       LOGGING_OUTPUT: elasticsearch
       PILOT_LOG_PREFIX: "aliyun,custom"

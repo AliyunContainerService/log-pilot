@@ -14,13 +14,12 @@ Prerequisites:
 - Docker Engine >= 1.10
 
 ```
+# download log-pilot project
 git clone git@github.com:AliyunContainerService/log-pilot.git
 # build log-pilot image
-cd log-pilot/
-./build.sh
+cd log-pilot/ && ./build-image.sh
 # quick start
-cd ../quickstart/
-./run
+cd quickstart/ && ./run
 ```
 
 Then access kibana under the tips. You will find that tomcat's has been collected and sended to kibana.
@@ -37,10 +36,12 @@ Quickstart
 ### Run pilot
 
 ```
-docker run --rm -it --privileged \
+docker run --rm -it \
     -v /var/run/docker.sock:/var/run/docker.sock \
+    -v /etc/localtime:/etc/localtime \
     -v /:/host:ro \
-    registry.cn-hangzhou.aliyuncs.com/acs-sample/log-pilot:latest
+    --cap-add SYS_ADMIN \
+    registry.cn-hangzhou.aliyuncs.com/acs/log-pilot:0.9.5-filebeat
 ```
 
 ### Run applications whose logs need to be collected
@@ -79,7 +80,7 @@ Prerequisites:
 go get github.com/AliyunContainerService/log-pilot
 cd $GOPATH/github.com/AliyunContainerService/log-pilot
 # This will create a new docker image named log-pilot:latest
-./build.sh
+./build-image.sh
 ```
 
 Contribute

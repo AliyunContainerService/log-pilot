@@ -30,17 +30,18 @@ swm2ft9bzaxyyi9umwbb0mdd6   aliyun_access_key   53 minutes ago      53 minutes a
 ````
 
 #### Example for non-swarm-mode setup
-* For `registry.cn-hangzhou.aliyuncs.com/acs-sample/fluentd-pilot:latest`
+* For `registry.cn-hangzhou.aliyuncs.com/acs/log-pilot:0.9.5-fluentd`
 ````
 docker run --rm -it \
     -v /var/run/docker.sock:/var/run/docker.sock \
-    -v /:/host \
+    -v /etc/localtime:/etc/localtime \
+    -v /:/host:ro \
     -e LOGGING_OUTPUT=aliyun_sls \
     -e ALIYUNSLS_PROJECT="your-aliyun-sls-project-name"  \
     -e ALIYUNSLS_REGION_ENDPOINT=cn-hangzhou.log.aliyuncs.com \
     -e ALIYUNSLS_ACCESS_KEY_ID="your-access-key-id" \
     -e ALIYUNSLS_ACCESS_KEY_SECRET="your-access-key-secret"  \
-    registry.cn-hangzhou.aliyuncs.com/acs-sample/fluentd-pilot:latest
+    registry.cn-hangzhou.aliyuncs.com/acs/log-pilot:0.9.5-fluentd
 ````
 
 
@@ -56,7 +57,7 @@ since there is no project name for `tomcat`, the stdout of `tomcat` will streame
 
 
 #### Example for swarm-mode setup with docker secrets
-* For `registry.cn-hangzhou.aliyuncs.com/acs-sample/fluentd-pilot:latest`
+* For `registry.cn-hangzhou.aliyuncs.com/acs/log-pilot:0.9.5-fluentd`
 ````
 $ echo "your-access-key-id:your-access-key-secret" | docker secret create aliyun_access_key -
 $ docker service create    -t \
@@ -66,7 +67,7 @@ $ docker service create    -t \
     -e LOGGING_OUTPUT=aliyun_sls \
     -e ALIYUNSLS_PROJECT="your-aliyun-sls-project-name"  \
     -e ALIYUNSLS_REGION_ENDPOINT=cn-hangzhou.log.aliyuncs.com \
-    registry.cn-hangzhou.aliyuncs.com/acs-sample/fluentd-pilot:latest
+    registry.cn-hangzhou.aliyuncs.com/acs/log-pilot:0.9.5-fluentd
 ````
 * For your app, suppose a tomcat
 ````

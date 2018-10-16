@@ -15,9 +15,9 @@ You must set environment variable ```PILOT_TYPE=filebeat``` to enable filebeat p
 ```
 docker run --rm -it \
    -v /var/run/docker.sock:/var/run/docker.sock \
+   -v /etc/localtime:/etc/localtime \
    -v /:/host:ro \
-   -e PILOT_TYPE=filebeat \
-   registry.cn-hangzhou.aliyuncs.com/acs-sample/log-pilot:latest
+   registry.cn-hangzhou.aliyuncs.com/acs/log-pilot:0.9.5-filebeat
 ```
 
 By default, all the logs that log-pilot collect will write to log-pilot's stdout. 
@@ -29,12 +29,12 @@ The command below run pilot with elastichsearch output, this makes log-pilot sen
 ```
 docker run --rm -it \
     -v /var/run/docker.sock:/var/run/docker.sock \
+    -v /etc/localtime:/etc/localtime \
     -v /:/host:ro \
-    -e PILOT_TYPE=filebeat \
     -e LOGGING_OUTPUT=elasticsearch \
     -e ELASTICSEARCH_HOST=${ELASTICSEARCH_HOST} \
     -e ELASTICSEARCH_PORT=${ELASTICSEARCH_PORT} \
-    registry.cn-hangzhou.aliyuncs.com/acs-sample/log-pilot:latest
+    registry.cn-hangzhou.aliyuncs.com/acs/log-pilot:0.9.5-filebeat
 ```
 
 Log output plugin configuration
@@ -123,10 +123,6 @@ There are many labels you can use to describe the log info.
 - `aliyun.logs.$name=$path`
     - Name is an identify, can be any string you want. The valid characters in name are `0-9a-zA-Z_-`
     - Path is the log file path, can contians wildcard. `stdout` is a special value which means stdout of the container.
-- `aliyun.logs.$name.format=none|json|csv|nginx|apache2|regexp` format of the log
-    - none: pure text.
-    - json: a json object per line.
-    - regexp: use regex parse log. The pattern is specified by `aliyun.logs.$name.format.pattern = $regex`
 - `aliyun.logs.$name.tags="k1=v1,k2=v2"`: tags will be appended to log. 
 - `aliyun.logs.$name.target=target-for-log-storage`: target is used by the output plugins, instruct the plugins to store
 logs in appropriate place. For elasticsearch output, target means the log index in elasticsearch. For aliyun_sls output,

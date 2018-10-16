@@ -9,8 +9,15 @@ import (
 	"time"
 )
 
-const PILOT_FLUENTD = "fluentd"
-const FLUENTD_CONF_HOME = "/etc/fluentd/conf.d"
+const (
+	FLUENTD_EXEC_CMD  = "/usr/bin/fluentd"
+	FLUENTD_BASE_CONF = "/etc/fluentd"
+	FLUENTD_CONF_DIR  = FLUENTD_BASE_CONF + "/conf.d"
+	FLUENTD_CONF_FILE = FLUENTD_BASE_CONF + "/fluentd.conf"
+	FLUENTD_PLUGINS   = FLUENTD_BASE_CONF + "/plugins"
+
+	ENV_FLUENTD_OUTPUT = "FLUENTD_OUTPUT"
+)
 
 var fluentd *exec.Cmd
 
@@ -32,9 +39,9 @@ func (p *FluentdPiloter) Start() error {
 	}
 
 	log.Info("starting fluentd")
-	fluentd = exec.Command("/usr/bin/fluentd",
-		"-c", "/etc/fluentd/fluentd.conf",
-		"-p", "/etc/fluentd/plugins")
+	fluentd = exec.Command(FLUENTD_EXEC_CMD,
+		"-c", FLUENTD_CONF_FILE,
+		"-p", FLUENTD_PLUGINS)
 	fluentd.Stderr = os.Stderr
 	fluentd.Stdout = os.Stdout
 	err := fluentd.Start()
@@ -91,8 +98,8 @@ func (p *FluentdPiloter) Reload() error {
 	return nil
 }
 
-func (p *FluentdPiloter) ConfPathOf(container string) string {
-	return fmt.Sprintf("%s/%s.conf", FLUENTD_CONF_HOME, container)
+func (p *FluentdPiloter) GetConfPath(container string) string {
+	return fmt.Sprintf("%s/%s.conf", FLUENTD_CONF_DIR, container)
 }
 
 func shell(command string) string {
@@ -104,8 +111,8 @@ func shell(command string) string {
 	return string(out)
 }
 
-func (p *FluentdPiloter) ConfHome() string {
-	return FLUENTD_CONF_HOME
+func (p *FluentdPiloter) GetConfHome() string {
+	return FLUENTD_CONF_DIR
 }
 
 func (p *FluentdPiloter) Name() string {
