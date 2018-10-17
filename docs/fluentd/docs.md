@@ -31,6 +31,7 @@ The command below run pilot with elastichsearch output, this makes log-pilot sen
 docker run --rm -it \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -v /:/host:ro \
+    --cap-add SYS_ADMIN \
     -e LOGGING_OUTPUT=elasticsearch \
     -e ELASTICSEARCH_HOST=${ELASTICSEARCH_HOST} \
     -e ELASTICSEARCH_PORT=${ELASTICSEARCH_PORT} \

@@ -36,11 +36,13 @@ docker run --rm -it \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -v /etc/localtime:/etc/localtime \
     -v /:/host:ro \
+    --cap-add SYS_ADMIN \
     -e LOGGING_OUTPUT=aliyun_sls \
     -e ALIYUNSLS_PROJECT="your-aliyun-sls-project-name"  \
     -e ALIYUNSLS_REGION_ENDPOINT=cn-hangzhou.log.aliyuncs.com \
     -e ALIYUNSLS_ACCESS_KEY_ID="your-access-key-id" \
     -e ALIYUNSLS_ACCESS_KEY_SECRET="your-access-key-secret"  \
+    -e ALIYUNSLS_NEED_CREATE_LOGSTORE="true" \
     registry.cn-hangzhou.aliyuncs.com/acs/log-pilot:0.9.5-fluentd
 ````
 

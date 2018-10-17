@@ -646,7 +646,7 @@ func (p *Pilot) getLogConfigs(jsonLogPath string, mounts []types.MountPoint, lab
 
 	var labelNames []string
 	//sort keys
-	for k, _ := range labels {
+	for k := range labels {
 		labelNames = append(labelNames, k)
 	}
 

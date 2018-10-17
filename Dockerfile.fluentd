@@ -17,8 +17,8 @@ RUN apk update && \
     apk add python && \
     apk add lsof && \
     apk add ca-certificates wget && \
-    gem install fluentd -v 1.1.0 --no-ri --no-rdoc && \
-    gem install fluent-plugin-elasticsearch --no-ri --no-rdoc && \
+    gem install fluentd -v 1.2.6 --no-ri --no-rdoc && \
+    gem install fluent-plugin-elasticsearch -v ">=2.0.0" --no-ri --no-rdoc && \
     gem install gelf -v "~> 3.0.0" --no-ri --no-rdoc && \
     gem install aliyun_sls_sdk -v ">=0.0.9" --no-ri --no-rdoc && \
     gem install remote_syslog_logger -v ">=1.0.1" --no-ri --no-rdoc && \
@@ -42,4 +42,5 @@ HEALTHCHECK CMD /pilot/healthz
 VOLUME /etc/fluentd/conf.d
 VOLUME /pilot/pos
 WORKDIR /pilot/
+ENV PILOT_TYPE=fluentd
 ENTRYPOINT ["/pilot/entrypoint"]

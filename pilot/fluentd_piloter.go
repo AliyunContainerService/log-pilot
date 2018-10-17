@@ -7,6 +7,8 @@ import (
 	"os/exec"
 	"syscall"
 	"time"
+	"strconv"
+	"strings"
 )
 
 const (
@@ -17,6 +19,7 @@ const (
 	FLUENTD_PLUGINS   = FLUENTD_BASE_CONF + "/plugins"
 
 	ENV_FLUENTD_OUTPUT = "FLUENTD_OUTPUT"
+	ENV_FLUENTD_WORKER = "FLUENTD_WORKER"
 )
 
 var fluentd *exec.Cmd
@@ -39,9 +42,15 @@ func (p *FluentdPiloter) Start() error {
 	}
 
 	log.Info("starting fluentd")
+	worker := os.Getenv(ENV_FLUENTD_WORKER)
+	if _, err := strconv.Atoi(worker); worker == "" || err != nil {
+		worker = "1"
+	}
+
 	fluentd = exec.Command(FLUENTD_EXEC_CMD,
 		"-c", FLUENTD_CONF_FILE,
-		"-p", FLUENTD_PLUGINS)
+		"-p", FLUENTD_PLUGINS,
+		"--workers", worker)
 	fluentd.Stderr = os.Stderr
 	fluentd.Stdout = os.Stdout
 	err := fluentd.Start()
@@ -108,7 +117,7 @@ func shell(command string) string {
 	if err != nil {
 		fmt.Printf("error %v", err)
 	}
-	return string(out)
+	return strings.TrimSpace(string(out))
 }
 
 func (p *FluentdPiloter) GetConfHome() string {
