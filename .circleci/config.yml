@@ -27,3 +27,4 @@ jobs:
     - run: go get -t -d -v ./...
     - run: chmod +x build-image.sh
     - run: ./build-image.sh
+    - run: ./build-image.sh fluentd
