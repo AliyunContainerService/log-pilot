@@ -1,0 +1,60 @@
+apiVersion: extensions/v1beta1
+kind: DaemonSet
+metadata:
+  name: log-pilot
+  labels:
+    k8s-app: log-pilot
+spec:
+  template:
+    metadata:
+      labels:
+        k8s-app: log-pilot
+    spec:
+      tolerations:
+      - key: node-role.kubernetes.io/master
+        effect: NoSchedule
+      containers:
+      - name: log-pilot
+        image: registry.cn-hangzhou.aliyuncs.com/acs/log-pilot:0.9.5-flume
+        imagePullPolicy: Always
+        env:
+          - name: "PILOT_TYPE"
+            value: "flume"
+          - name: "FLUME_OUTPUT"
+            value: "/opt/log/log-pilot-out"
+          - name: "NODE_NAME"
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
+        volumeMounts:
+        - name: sock
+          mountPath: /var/run/docker.sock
+        - name: root
+          mountPath: /host
+        - name: log-meta
+          mountPath: /flume/log_meta
+        - name: logout
+          mountPath: /opt/log/log-pilot-out
+        - name: flume-log
+          mountPath: /opt/log/flume
+        securityContext:
+          capabilities:
+            add:
+            - SYS_ADMIN
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - name: sock
+        hostPath:
+          path: /var/run/docker.sock
+      - name: root
+        hostPath:
+          path: /
+      - name: logout
+        hostPath:
+          path: /opt/log/log-pilot-out
+      - name: log-meta
+        hostPath:
+          path: /opt/log/log-pilot-out/log_meta
+      - name: flume-log
+        hostPath:
+          path: /opt/log/flume
