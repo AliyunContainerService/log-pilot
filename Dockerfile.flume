@@ -1,0 +1,48 @@
+FROM golang:1.9-alpine3.6 as builder
+
+ENV PILOT_DIR /go/src/github.com/AliyunContainerService/log-pilot
+ARG GOOS=linux
+ARG GOARCH=amd64
+RUN set -ex && apk add --no-cache make git
+WORKDIR $PILOT_DIR
+COPY . $PILOT_DIR
+RUN go install 
+
+FROM alpine:3.6
+COPY assets/glibc/glibc-2.26-r0.apk /tmp/
+
+RUN apk update && \
+    apk add tzdata && \
+    ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
+    echo "Asia/Shanghai" > /etc/timezone && \
+    apk add python && \
+    apk add ca-certificates wget && \
+    update-ca-certificates && \
+    wget wget --no-cookie --header "Cookie: oraclelicense=accept-securebackup-cookie" https://download.oracle.com/otn-pub/java/jdk/8u191-b12/2787e4a523244c269598db4e85c51e0c/jdk-8u191-linux-x64.tar.gz && \
+    tar -xvzf jdk-8u191-linux-x64.tar.gz -C /usr/local/ && ln -s /usr/local/jdk/jdk1.8.0_191 /usr/local/java && \
+    rm -f jdk-8u191-linux-x64.tar.gz && \
+    apk add curl openssl && \
+    apk add --allow-untrusted /tmp/glibc-2.26-r0.apk && \
+    rm -rf /tmp/glibc-2.26-r0.apk && \
+    apk add --no-cache bash bash-doc bash-completion && \
+    rm -rf /var/cache/apk/*
+
+ENV JAVA_HOME="/usr/local/java" \
+    JRE_HOME="/usr/local/java/jre" \
+    CLASSPATH=".:/usr/local/java/lib:/opt/soft/java/jre/lib:" \
+    PATH="/usr/local/java/bin:/usr/local/java/jre/bin:$PATH"
+
+COPY --from=builder /go/bin/log-pilot /pilot/pilot
+COPY assets/entrypoint assets/flume/ assets/healthz /pilot/
+RUN cd /pilot && \
+    wget http://mirrors.hust.edu.cn/apache/flume/1.8.0/apache-flume-1.8.0-bin.tar.gz && \
+    tar -zvxf apache-flume-1.8.0-bin.tar.gz && ln -s apache-flume-1.8.0-bin flume && mkdir -p /pilot/flume/conf/tmp && \
+    chmod +x /pilot/pilot /pilot/entrypoint /pilot/healthz
+
+HEALTHCHECK CMD /pilot/healthz
+
+VOLUME /opt/log
+VOLUME /flume/log_meta
+WORKDIR /pilot/
+ENV PILOT_TYPE=flume
+ENTRYPOINT ["/pilot/entrypoint"]

@@ -14,6 +14,9 @@ case $1 in
 fluentd)
     build fluentd
     ;;
+flume)
+    build flume
+    ;;
 *)
     build filebeat
     ;;

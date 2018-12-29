@@ -37,8 +37,10 @@ def run():
     pilot_type = os.environ.get(ENV_PILOT_TYPE)
     if pilot_filebeat == pilot_type:
         tpl_config = "/pilot/filebeat.tpl"
-    else:
+    elif pilot_fluentd == pilot_type:
         tpl_config = "/pilot/fluentd.tpl"
+    else:
+        tpl_config = "/pilot/flume.tpl"
 
     os.execve('/pilot/pilot', ['/pilot/pilot', '-template', tpl_config, '-base', base, '-log-level', 'debug'],
               os.environ)
@@ -49,8 +51,8 @@ def config():
     if pilot_filebeat == pilot_type:
         print "start log-pilot:", pilot_filebeat
         subprocess.check_call(['/pilot/config.filebeat'])
-    else:
-        print "start log-pilot:", pilot_fluentd
+    elif pilot_fluentd == pilot_type:
+        print "enable pilot:", pilot_fluentd
         subprocess.check_call(['/pilot/config.fluentd'])
 
 

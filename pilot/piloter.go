@@ -10,6 +10,7 @@ const (
 
 	PILOT_FILEBEAT = "filebeat"
 	PILOT_FLUENTD  = "fluentd"
+	PILOT_FLUME = "flume"
 )
 
 type Piloter interface {
@@ -31,6 +32,9 @@ func NewPiloter(baseDir string) (Piloter, error) {
 	}
 	if os.Getenv(ENV_PILOT_TYPE) == PILOT_FLUENTD {
 		return NewFluentdPiloter()
+	}
+	if os.Getenv(ENV_PILOT_TYPE) == PILOT_FLUME {
+		return NewFlumePiloter()
 	}
 	return nil, fmt.Errorf("InvalidPilotType")
 }

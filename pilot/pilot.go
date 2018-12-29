@@ -410,7 +410,7 @@ func (p *Pilot) delContainer(id string) error {
 	p.removeVolumeSymlink(id)
 
 	//fixme refactor in the future
-	if p.piloter.Name() == PILOT_FLUENTD {
+	if p.piloter.Name() == PILOT_FLUENTD || p.piloter.Name() == PILOT_FLUME {
 		clean := func() {
 			log.Infof("Try removing log config %s", id)
 			if err := os.Remove(p.piloter.GetConfPath(id)); err != nil {
@@ -691,6 +691,8 @@ func (p *Pilot) render(containerId string, container map[string]string, configLi
 	output := os.Getenv(ENV_FLUENTD_OUTPUT)
 	if p.piloter.Name() == PILOT_FILEBEAT {
 		output = os.Getenv(ENV_FILEBEAT_OUTPUT)
+	}else if p.piloter.Name() == PILOT_FLUME {
+		output = os.Getenv(ENV_FLUME_OUTPUT)
 	}
 	if output == "" {
 		output = os.Getenv(ENV_LOGGING_OUTPUT)
