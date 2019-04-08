@@ -1,8 +1,8 @@
 package pilot
 
 import (
-	"os"
 	"fmt"
+	"os"
 )
 
 const (
