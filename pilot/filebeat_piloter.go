@@ -6,13 +6,13 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/elastic/go-ucfg"
 	"github.com/elastic/go-ucfg/yaml"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"time"
 	"regexp"
-	"io/ioutil"
 	"strings"
+	"time"
 )
 
 const (
@@ -87,7 +87,6 @@ func (p *FilebeatPiloter) watch() error {
 			}
 		}
 	}
-	return nil
 }
 
 func (p *FilebeatPiloter) scan() error {

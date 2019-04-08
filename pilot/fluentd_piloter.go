@@ -5,10 +5,10 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"os"
 	"os/exec"
-	"syscall"
-	"time"
 	"strconv"
 	"strings"
+	"syscall"
+	"time"
 )
 
 const (
