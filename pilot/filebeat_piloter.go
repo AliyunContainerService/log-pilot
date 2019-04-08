@@ -87,7 +87,6 @@ func (p *FilebeatPiloter) watch() error {
 			}
 		}
 	}
-	return nil
 }
 
 func (p *FilebeatPiloter) scan() error {
