@@ -2,14 +2,17 @@ package pilot
 
 import "fmt"
 
+// FormatConverter converts node info to map
 type FormatConverter func(info *LogInfoNode) (map[string]string, error)
 
 var converters = make(map[string]FormatConverter)
 
+// Register format converter instance
 func Register(format string, converter FormatConverter) {
 	converters[format] = converter
 }
 
+// Convert convert node info to map
 func Convert(info *LogInfoNode) (map[string]string, error) {
 	converter := converters[info.value]
 	if converter == nil {
@@ -18,6 +21,7 @@ func Convert(info *LogInfoNode) (map[string]string, error) {
 	return converter(info)
 }
 
+// SimpleConverter simple format converter
 type SimpleConverter struct {
 	properties map[string]bool
 }
@@ -54,7 +58,7 @@ func init() {
 			return ret, err
 		}
 		if ret["pattern"] == "" {
-			return nil, fmt.Errorf("regex pattern can not be emtpy")
+			return nil, fmt.Errorf("regex pattern can not be empty")
 		}
 		return ret, nil
 	})

@@ -26,7 +26,7 @@ func main() {
 	}
 
 	if *template == "" {
-		panic("template file can not be emtpy")
+		panic("template file can not be empty")
 	}
 
 	log.SetOutput(os.Stdout)

@@ -5,6 +5,7 @@ import (
 	"os"
 )
 
+// Global variables for piloter
 const (
 	ENV_PILOT_TYPE = "PILOT_TYPE"
 
@@ -12,6 +13,7 @@ const (
 	PILOT_FLUENTD  = "fluentd"
 )
 
+// Piloter interface for piloter
 type Piloter interface {
 	Name() string
 
@@ -25,6 +27,7 @@ type Piloter interface {
 	OnDestroyEvent(container string) error
 }
 
+// NewPiloter instantiates a new piloter
 func NewPiloter(baseDir string) (Piloter, error) {
 	if os.Getenv(ENV_PILOT_TYPE) == PILOT_FILEBEAT {
 		return NewFilebeatPiloter(baseDir)

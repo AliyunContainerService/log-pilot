@@ -15,6 +15,7 @@ import (
 	"time"
 )
 
+// Global variables for FilebeatPiloter
 const (
 	FILEBEAT_EXEC_CMD  = "/usr/bin/filebeat"
 	FILEBEAT_REGISTRY  = "/var/lib/filebeat/registry"
@@ -30,6 +31,7 @@ const (
 
 var filebeat *exec.Cmd
 
+// FilebeatPiloter for filebeat plugin
 type FilebeatPiloter struct {
 	name           string
 	baseDir        string
@@ -38,6 +40,7 @@ type FilebeatPiloter struct {
 	watchContainer map[string]string
 }
 
+// NewFilebeatPiloter returns a FilebeatPiloter instance
 func NewFilebeatPiloter(baseDir string) (Piloter, error) {
 	return &FilebeatPiloter{
 		name:           PILOT_FILEBEAT,
@@ -54,15 +57,18 @@ var configOpts = []ucfg.Option{
 	ucfg.VarExp,
 }
 
+// Config contains all log paths
 type Config struct {
 	Paths []string `config:"paths"`
 }
 
+// FileInode identify a unique log file
 type FileInode struct {
 	Inode  uint64 `json:"inode,"`
 	Device uint64 `json:"device,"`
 }
 
+// RegistryState represents log offsets
 type RegistryState struct {
 	Source      string        `json:"source"`
 	Offset      int64         `json:"offset"`
@@ -228,6 +234,7 @@ func (p *FilebeatPiloter) feed(containerID string) error {
 	return nil
 }
 
+// Start starting and watching filebeat process
 func (p *FilebeatPiloter) Start() error {
 	if filebeat != nil {
 		pid := filebeat.Process.Pid
@@ -265,28 +272,34 @@ func (p *FilebeatPiloter) Start() error {
 	return err
 }
 
+// Stop log collection
 func (p *FilebeatPiloter) Stop() error {
 	p.watchDone <- true
 	return nil
 }
 
+// Reload reload configuration file
 func (p *FilebeatPiloter) Reload() error {
 	log.Debug("do not need to reload filebeat")
 	return nil
 }
 
+// GetConfPath returns log configuration path
 func (p *FilebeatPiloter) GetConfPath(container string) string {
 	return fmt.Sprintf("%s/%s.yml", FILEBEAT_CONF_DIR, container)
 }
 
+// GetConfHome returns configuration directory
 func (p *FilebeatPiloter) GetConfHome() string {
 	return FILEBEAT_CONF_DIR
 }
 
+// Name returns plugin name
 func (p *FilebeatPiloter) Name() string {
 	return p.name
 }
 
+// OnDestroyEvent watching destroy event
 func (p *FilebeatPiloter) OnDestroyEvent(container string) error {
 	return p.feed(container)
 }
