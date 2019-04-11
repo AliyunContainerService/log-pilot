@@ -66,7 +66,7 @@ ELASTICSEARCH_USER       "(optinal) elasticsearch authentication username"
 ELASTICSEARCH_PASSWORD   "(optinal) elasticsearch authentication password"
 ELASTICSEARCH_PATH       "(optinal) elasticsearch http path prefix"
 ELASTICSEARCH_SCHEME     "(optinal) elasticsearch scheme, default is http"
-ELASTICSEARCH_SSL_VERIFY "(optinal) need ssl verfication, default is true"
+ELASTICSEARCH_SSL_VERIFY "(optinal) need ssl verification, default is true"
 ```
 
 - graylog
@@ -86,7 +86,7 @@ ALIYUNSLS_PROJECT                     "(required) aliyun sls project"
 ALIYUNSLS_REGION_ENDPOINT             "(required) aliyun sls region endpoint"
 ALIYUNSLS_ACCESS_KEY_ID               "(required) aliyun access key"
 ALIYUNSLS_ACCESS_KEY_SECRET           "(required) aliyun access secret"
-SSL_VERIFY                            "(optinal) need ssl verfication, default is false"
+SSL_VERIFY                            "(optinal) need ssl verification, default is false"
 ALIYUNSLS_NEED_CREATE_LOGSTORE        "(optinal) create logstore if not exist, default is false"
 ALIYUNSLS_CREATE_LOGSTORE_TTL         "(optinal) create logstore ttl, default is infinite"
 ALIYUNSLS_CREATE_LOGSTORE_SHARD_COUNT "(optinal) create logstore shard count, default is 2"
@@ -145,7 +145,7 @@ There are many labels you can use to describe the log info.
 
 - `aliyun.logs.$name=$path`
     - Name is an identify, can be any string you want. The valid characters in name are `0-9a-zA-Z_-`
-    - Path is the log file path, can contians wildcard. `stdout` is a special value which means stdout of the container.
+    - Path is the log file path, can contains wildcard. `stdout` is a special value which means stdout of the container.
 - `aliyun.logs.$name.format=none|json|csv|nginx|apache2|regexp` format of the log
     - none: pure text.
     - json: a json object per line.

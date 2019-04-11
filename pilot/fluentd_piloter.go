@@ -11,6 +11,7 @@ import (
 	"time"
 )
 
+// Global variables for FluentdPiloter
 const (
 	FLUENTD_EXEC_CMD  = "/usr/bin/fluentd"
 	FLUENTD_BASE_CONF = "/etc/fluentd"
@@ -24,16 +25,19 @@ const (
 
 var fluentd *exec.Cmd
 
+// FluentdPiloter for fluentd plugin
 type FluentdPiloter struct {
 	name string
 }
 
+// NewFluentdPiloter returns a FluentdPiloter instance
 func NewFluentdPiloter() (Piloter, error) {
 	return &FluentdPiloter{
 		name: PILOT_FLUENTD,
 	}, nil
 }
 
+// Start starting and watching fluentd process
 func (p *FluentdPiloter) Start() error {
 	if fluentd != nil {
 		pid := fluentd.Process.Pid
@@ -76,10 +80,12 @@ func (p *FluentdPiloter) Start() error {
 	return err
 }
 
+// Stop log collection
 func (p *FluentdPiloter) Stop() error {
 	return nil
 }
 
+// Reload reload configuration file
 func (p *FluentdPiloter) Reload() error {
 	if fluentd == nil {
 		err := fmt.Errorf("fluentd have not started")
@@ -107,6 +113,7 @@ func (p *FluentdPiloter) Reload() error {
 	return nil
 }
 
+// GetConfPath returns log configuration path
 func (p *FluentdPiloter) GetConfPath(container string) string {
 	return fmt.Sprintf("%s/%s.conf", FLUENTD_CONF_DIR, container)
 }
@@ -120,14 +127,17 @@ func shell(command string) string {
 	return strings.TrimSpace(string(out))
 }
 
+// GetConfHome returns configuration directory
 func (p *FluentdPiloter) GetConfHome() string {
 	return FLUENTD_CONF_DIR
 }
 
+// Name returns plugin name
 func (p *FluentdPiloter) Name() string {
 	return p.name
 }
 
+// OnDestroyEvent watching destroy event
 func (p *FluentdPiloter) OnDestroyEvent(container string) error {
 	log.Info("refactor in the future!!!")
 	return nil

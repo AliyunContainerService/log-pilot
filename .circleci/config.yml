@@ -24,7 +24,23 @@ jobs:
         docker_layer_caching: false
 
     # specify any bash command here prefixed with `run: `
-    - run: go get -t -d -v ./...
-    - run: chmod +x build-image.sh
-    - run: ./build-image.sh
-    - run: ./build-image.sh fluentd
+    - run:
+        name: static check
+        command: |
+          make misspell
+          make check_dead_links
+          make static-check
+          make vet
+    - run:
+        name: unit test
+        command: |
+          make test
+    - run:
+        name: build image
+        command: |
+          make container
+    - run:
+        name: codecov
+        command: |
+          go test -race -coverprofile=coverage.txt -covermode=atomic ./...
+          bash <(curl -s https://codecov.io/bash)

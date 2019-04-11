@@ -1,8 +1,8 @@
 package pilot
 
 import (
-	"github.com/docker/docker/api/types"
 	log "github.com/Sirupsen/logrus"
+	"github.com/docker/docker/api/types"
 	"gopkg.in/check.v1"
 	"os"
 	"testing"
@@ -19,7 +19,10 @@ type PilotSuite struct{}
 var _ = check.Suite(&PilotSuite{})
 
 func (p *PilotSuite) TestGetLogConfigs(c *check.C) {
-	pilot := &Pilot{}
+	pilot := &Pilot{
+		logPrefix: []string{"aliyun"},
+	}
+
 	labels := map[string]string{}
 	configs, err := pilot.getLogConfigs("/path/to/json.log", []types.MountPoint{}, labels)
 	c.Assert(err, check.IsNil)
@@ -48,8 +51,8 @@ func (p *PilotSuite) TestGetLogConfigs(c *check.C) {
 	c.Assert(configs[0].Format, check.Equals, "json")
 	c.Assert(configs[0].ContainerDir, check.Equals, "/var/log")
 	c.Assert(configs[0].File, check.Equals, "hello.log")
-	c.Assert(configs[0].Tags, check.HasLen, 2)
-	c.Assert(configs[0].FormatConfig, check.HasLen, 1)
+	c.Assert(configs[0].Tags, check.HasLen, 4)
+	c.Assert(configs[0].FormatConfig, check.HasLen, 2)
 
 	//Test regex format
 	labels = map[string]string{
@@ -77,17 +80,18 @@ func (p *PilotSuite) TestRender(c *check.C) {
 	`
 
 	configs := []*LogConfig{
-		&LogConfig{
+		{
 			Name:    "hello",
 			HostDir: "/path/to/hello",
 			File:    "hello.log",
 		},
-		&LogConfig{
+		{
 			Name:    "world",
 			File:    "world.log",
 			HostDir: "/path/to/world",
 		},
 	}
+	os.Setenv(ENV_PILOT_TYPE, PILOT_FILEBEAT)
 	pilot, err := New(template, "/")
 	c.Assert(err, check.IsNil)
 	_, err = pilot.render("id-1111", map[string]string{}, configs)
