@@ -27,10 +27,7 @@ jobs:
     - run:
       name: static check
       command: |
-        make misspell
-        make check_dead_links
-        make static-check
-        make vet
+        make misspell check_dead_links static-check vet
     - run:
       name: unit test
       command: |
