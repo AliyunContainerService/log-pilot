@@ -28,6 +28,7 @@ Label:
 aliyun.log: /var/log/hello.log[:json][;/var/log/abc/def.log[:txt]]
 */
 
+// Global variables
 const (
 	ENV_PILOT_LOG_PREFIX     = "PILOT_LOG_PREFIX"
 	ENV_PILOT_CREATE_SYMLINK = "PILOT_CREATE_SYMLINK"
@@ -47,6 +48,7 @@ const (
 	ERR_ALREADY_STARTED = "already started"
 )
 
+// Pilot entry point
 type Pilot struct {
 	piloter       Piloter
 	mutex         sync.Mutex
@@ -60,6 +62,7 @@ type Pilot struct {
 	createSymlink bool
 }
 
+// Run start log pilot
 func Run(templ string, baseDir string) error {
 	p, err := New(templ, baseDir)
 	if err != nil {
@@ -68,6 +71,7 @@ func Run(templ string, baseDir string) error {
 	return p.watch()
 }
 
+// New returns a log pilot instance
 func New(tplStr string, baseDir string) (*Pilot, error) {
 	templ, err := template.New("pilot").Parse(tplStr)
 	if err != nil {
@@ -147,9 +151,8 @@ func (p *Pilot) watch() error {
 				log.Warnf("error: %v", err)
 				if err == io.EOF || err == io.ErrUnexpectedEOF {
 					return
-				} else {
-					msgs, errs = p.client.Events(ctx, options)
 				}
+				msgs, errs = p.client.Events(ctx, options)
 			}
 		}
 	}()
@@ -165,6 +168,7 @@ func (p *Pilot) watch() error {
 	return nil
 }
 
+// LogConfig log configuration
 type LogConfig struct {
 	Name         string
 	HostDir      string
@@ -421,9 +425,9 @@ func (p *Pilot) delContainer(id string) error {
 		}
 		time.AfterFunc(15*time.Minute, clean)
 		return nil
-	} else {
-		return p.piloter.OnDestroyEvent(id)
 	}
+
+	return p.piloter.OnDestroyEvent(id)
 }
 
 func (p *Pilot) processEvent(msg events.Message) error {
@@ -446,11 +450,11 @@ func (p *Pilot) processEvent(msg events.Message) error {
 
 		return p.newContainer(&containerJSON)
 	case "destroy":
-		log.Debugf("Process container destory event: %s", containerId)
+		log.Debugf("Process container destroy event: %s", containerId)
 
 		err := p.delContainer(containerId)
 		if err != nil {
-			log.Warnf("Process container destory event error: %s, %s",
+			log.Warnf("Process container destroy event error: %s, %s",
 				containerId, err.Error())
 		}
 	}
@@ -463,13 +467,13 @@ func (p *Pilot) hostDirOf(path string, mounts map[string]types.MountPoint) strin
 		if point, ok := mounts[path]; ok {
 			if confPath == path {
 				return point.Source
-			} else {
-				relPath, err := filepath.Rel(path, confPath)
-				if err != nil {
-					panic(err)
-				}
-				return fmt.Sprintf("%s/%s", point.Source, relPath)
 			}
+
+			relPath, err := filepath.Rel(path, confPath)
+			if err != nil {
+				panic(err)
+			}
+			return fmt.Sprintf("%s/%s", point.Source, relPath)
 		}
 		path = filepath.Dir(path)
 		if path == "/" || path == "." {
@@ -599,6 +603,7 @@ func (p *Pilot) parseLogConfig(name string, info *LogInfoNode, jsonLogPath strin
 	return cfg, nil
 }
 
+// LogInfoNode node info
 type LogInfoNode struct {
 	value    string
 	children map[string]*LogInfoNode

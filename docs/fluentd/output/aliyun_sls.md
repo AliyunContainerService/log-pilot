@@ -22,7 +22,7 @@ If you want to save the `aliyun access key` in docker secrets, you don't need to
 ````
 # suppose "your_access_key_id" is your access_key_id
 # suppose "your_access_key_secret" is your access_key_secret
-$ echo "your_access_key_id:your_access_key_secret" | docker secret create aliyun_access_key - # create a secret named `aliyun_access_key`, the name is relavent and you should not change it 
+$ echo "your_access_key_id:your_access_key_secret" | docker secret create aliyun_access_key - # create a secret named `aliyun_access_key`, the name is relevant and you should not change it
 $ docker secret ls
 ID                          NAME                CREATED             UPDATED
 swm2ft9bzaxyyi9umwbb0mdd6   aliyun_access_key   53 minutes ago      53 minutes ago

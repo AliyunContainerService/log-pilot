@@ -124,7 +124,7 @@ There are many labels you can use to describe the log info.
 
 - `aliyun.logs.$name=$path`
     - Name is an identify, can be any string you want. The valid characters in name are `0-9a-zA-Z_-`
-    - Path is the log file path, can contians wildcard. `stdout` is a special value which means stdout of the container.
+    - Path is the log file path, can contains wildcard. `stdout` is a special value which means stdout of the container.
 - `aliyun.logs.$name.tags="k1=v1,k2=v2"`: tags will be appended to log. 
 - `aliyun.logs.$name.target=target-for-log-storage`: target is used by the output plugins, instruct the plugins to store
 logs in appropriate place. For elasticsearch output, target means the log index in elasticsearch. For aliyun_sls output,
