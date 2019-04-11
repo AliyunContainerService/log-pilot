@@ -28,7 +28,6 @@ jobs:
         name: static check
         command: |
           make misspell
-          make check_dead_links
           make static-check
           make vet
     - run:
