@@ -303,3 +303,8 @@ func (p *FilebeatPiloter) Name() string {
 func (p *FilebeatPiloter) OnDestroyEvent(container string) error {
 	return p.feed(container)
 }
+
+// GetBaseConf returns plugin root directory
+func (p *FilebeatPiloter) GetBaseConf() string {
+	return FILEBEAT_BASE_CONF
+}
