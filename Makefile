@@ -51,6 +51,7 @@ container: clean-container .container-$(ARCH)
 	$(DOCKER) build --no-cache --pull -t $(MULTI_ARCH_IMG)-filebeat:$(TAG) -f Dockerfile.filebeat $(TEMP_DIR)/
 ifeq ($(ARCH), amd64)
 	$(DOCKER) tag $(MULTI_ARCH_IMG)-filebeat:$(TAG) $(IMAGE)-filebeat:$(TAG)
+	$(DOCKER) tag $(MULTI_ARCH_IMG)-filebeat:$(TAG) $(IMGNAME):$(TAG)
 endif
 
 	@echo "+ Building container image $(MULTI_ARCH_IMG)-fluentd:$(TAG)"

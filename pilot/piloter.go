@@ -21,6 +21,7 @@ type Piloter interface {
 	Reload() error
 	Stop() error
 
+	GetBaseConf() string
 	GetConfHome() string
 	GetConfPath(container string) string
 

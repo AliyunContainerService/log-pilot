@@ -1,0 +1,96 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: log-pilot-configuration
+data:
+  logging_output: "kafka"
+  kafka_brokers: "kafka1:9092,kafka2:9092"
+  # configure all valid topics in kafka
+  # when disable auto-create topic
+  kafka_topics: "topic1,topic2,topic3"
+---
+apiVersion: extensions/v1beta1
+kind: DaemonSet
+metadata:
+  name: log-pilot
+  labels:
+    k8s-app: log-pilot
+spec:
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        k8s-app: log-pilot
+    spec:
+      tolerations:
+      - key: node-role.kubernetes.io/master
+        effect: NoSchedule
+      containers:
+      - name: log-pilot
+        image: registry.cn-hangzhou.aliyuncs.com/acs/log-pilot:0.9.6-filebeat
+        env:
+          - name: "LOGGING_OUTPUT"
+            valueFrom:
+              configMapKeyRef:
+                name: log-pilot-configuration
+                key: logging_output
+          - name: "KAFKA_BROKERS"
+            valueFrom:
+              configMapKeyRef:
+                name: log-pilot-configuration
+                key: kafka_brokers
+          - name: "NODE_NAME"
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
+        volumeMounts:
+        - name: sock
+          mountPath: /var/run/docker.sock
+        - name: logs
+          mountPath: /var/log/filebeat
+        - name: state
+          mountPath: /var/lib/filebeat
+        - name: root
+          mountPath: /host
+          readOnly: true
+        - name: localtime
+          mountPath: /etc/localtime
+        # configure all valid topics in kafka
+        # when disable auto-create topic
+        - name: config-volume
+          mountPath: /etc/filebeat/config
+        securityContext:
+          capabilities:
+            add:
+            - SYS_ADMIN
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - name: sock
+        hostPath:
+          path: /var/run/docker.sock
+          type: Socket
+      - name: logs
+        hostPath:
+          path: /var/log/filebeat
+          type: DirectoryOrCreate
+      - name: state
+        hostPath:
+          path: /var/lib/filebeat
+          type: DirectoryOrCreate
+      - name: root
+        hostPath:
+          path: /
+          type: Directory
+      - name: localtime
+        hostPath:
+          path: /etc/localtime
+          type: File
+      # kubelet sync period
+      - name: config-volume
+        configMap:
+          name: log-pilot-configuration
+          items:
+          - key: kafka_topics
+            path: kafka_topics

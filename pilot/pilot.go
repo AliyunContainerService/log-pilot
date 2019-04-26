@@ -505,6 +505,32 @@ func (p *Pilot) parseTags(tags string) (map[string]string, error) {
 	return tagMap, nil
 }
 
+func (p *Pilot) tryCheckKafkaTopic(topic string) error {
+	output := os.Getenv(ENV_LOGGING_OUTPUT)
+	if output != "kafka" {
+		return nil
+	}
+
+	topicPath := filepath.Join(p.piloter.GetBaseConf(), "config", "kafka_topics")
+	if _, err := os.Stat(topicPath); os.IsNotExist(err) {
+		log.Info("ignore checking the validity of kafka topic")
+		return nil
+	}
+
+	topics, err := ReadFile(topicPath, ",")
+	if err != nil {
+		return err
+	}
+
+	for _, t := range topics {
+		if t == topic {
+			return nil
+		}
+	}
+
+	return fmt.Errorf("invalid topic: %s, supported topics: %v", topic, topics)
+}
+
 func (p *Pilot) parseLogConfig(name string, info *LogInfoNode, jsonLogPath string, mounts map[string]types.MountPoint) (*LogConfig, error) {
 	path := strings.TrimSpace(info.value)
 	if path == "" {
@@ -533,6 +559,11 @@ func (p *Pilot) parseLogConfig(name string, info *LogInfoNode, jsonLogPath strin
 		} else {
 			tagMap["topic"] = name
 		}
+	}
+
+	// try to check the validity of the target topic for kafka
+	if err := p.tryCheckKafkaTopic(tagMap["topic"]); err != nil {
+		return nil, err
 	}
 
 	format := info.children["format"]

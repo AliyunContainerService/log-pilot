@@ -142,3 +142,8 @@ func (p *FluentdPiloter) OnDestroyEvent(container string) error {
 	log.Info("refactor in the future!!!")
 	return nil
 }
+
+// GetBaseConf returns plugin root directory
+func (p *FluentdPiloter) GetBaseConf() string {
+	return FLUENTD_BASE_CONF
+}
