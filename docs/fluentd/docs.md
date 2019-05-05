@@ -41,7 +41,7 @@ docker run --rm -it \
 Log output plugin configuration
 ===============================
 
-You can config the environment variable ```LOGGING_OUTPUT ``` to determine which log management will be output.
+You can config the environment variable ```LOGGING_OUTPUT``` to determine which log management will be output. You can alse config the environment variable ```FLUENTD_LOG_LEVEL``` to change the log level of fluentd, The default fluentd log level is ```info```.
 
 ### Supported log management
 
