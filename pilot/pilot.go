@@ -450,7 +450,7 @@ func (p *Pilot) processEvent(msg events.Message) error {
 
 		return p.newContainer(&containerJSON)
 	//Increase the monitoring of container Exit events and repair the log duplicate collection caused by the failure to delete the exited container in time
-	case "destroy" , "die" :
+	case "destroy", "die":
 		log.Debugf("Process container destroy event: %s", containerId)
 
 		err := p.delContainer(containerId)
