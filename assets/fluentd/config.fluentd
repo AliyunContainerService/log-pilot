@@ -46,7 +46,7 @@ EOF
 fluentd_options(){
 cat >> $FLUENTD_CONFIG << EOF
 <system>
-${FLUENTD_LOG_LEVEL:+@log_level $FLUENTD_LOG_LEVEL}
+${FLUENTD_LOG_LEVEL:+log_level $FLUENTD_LOG_LEVEL}
 </system>
 EOF
 if [ "$FLUENTD_ENABLE_MONITOR" == "true" ]; then
