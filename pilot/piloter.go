@@ -3,6 +3,7 @@ package pilot
 import (
 	"fmt"
 	"os"
+	"strings"
 )
 
 // Global variables for piloter
@@ -37,4 +38,25 @@ func NewPiloter(baseDir string) (Piloter, error) {
 		return NewFluentdPiloter()
 	}
 	return nil, fmt.Errorf("InvalidPilotType")
+}
+
+// CustomConfig custom config
+func CustomConfig(name string, customConfigs map[string]string, logConfig *LogConfig) {
+	if os.Getenv(ENV_PILOT_TYPE) == PILOT_FILEBEAT {
+		fields := make(map[string]string)
+		configs := make(map[string]string)
+		for k, v := range customConfigs {
+			if strings.HasPrefix(k, name) {
+				key := strings.TrimPrefix(k, name+".")
+				if strings.HasPrefix(key, "fields") {
+					key2 := strings.TrimPrefix(key, "fields.")
+					fields[key2] = v
+				} else {
+					configs[key] = v
+				}
+			}
+		}
+		logConfig.CustomFields = fields
+		logConfig.CustomConfigs = configs
+	}
 }
