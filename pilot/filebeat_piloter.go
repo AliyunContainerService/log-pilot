@@ -30,6 +30,7 @@ const (
 )
 
 var filebeat *exec.Cmd
+var _ Piloter = (*FilebeatPiloter)(nil)
 
 // FilebeatPiloter for filebeat plugin
 type FilebeatPiloter struct {

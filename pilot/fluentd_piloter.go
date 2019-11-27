@@ -24,6 +24,7 @@ const (
 )
 
 var fluentd *exec.Cmd
+var _ Piloter = (*FluentdPiloter)(nil)
 
 // FluentdPiloter for fluentd plugin
 type FluentdPiloter struct {

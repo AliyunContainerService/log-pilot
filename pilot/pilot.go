@@ -403,7 +403,7 @@ func (p *Pilot) tryReload() {
 }
 
 func (p *Pilot) doReload() {
-	log.Info("Reload gorouting is ready")
+	log.Info("Reload goroutine is ready")
 	for {
 		<-p.reloadChan
 		p.reload()
