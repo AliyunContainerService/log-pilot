@@ -34,16 +34,18 @@ const (
 	ENV_PILOT_CREATE_SYMLINK = "PILOT_CREATE_SYMLINK"
 	ENV_LOGGING_OUTPUT       = "LOGGING_OUTPUT"
 
-	ENV_SERVICE_LOGS_TEMPL   = "%s_logs_"
-	LABEL_SERVICE_LOGS_TEMPL = "%s.logs."
-	LABEL_PROJECT_SWARM_MODE = "com.docker.stack.namespace"
-	LABEL_PROJECT            = "com.docker.compose.project"
-	LABEL_SERVICE            = "com.docker.compose.service"
-	LABEL_SERVICE_SWARM_MODE = "com.docker.swarm.service.name"
-	LABEL_K8S_POD_NAMESPACE  = "io.kubernetes.pod.namespace"
-	LABEL_K8S_CONTAINER_NAME = "io.kubernetes.container.name"
-	LABEL_POD                = "io.kubernetes.pod.name"
-	SYMLINK_LOGS_BASE        = "/acs/log/"
+	ENV_SERVICE_LOGS_TEMPL                  = "%s_logs_"
+	ENV_SERVICE_LOGS_CUSTOME_CONFIG_TEMPL   = "%s_logs_custom_config"
+	LABEL_SERVICE_LOGS_TEMPL                = "%s.logs."
+	LABEL_SERVICE_LOGS_CUSTOME_CONFIG_TEMPL = "%s.logs.custom.config"
+	LABEL_PROJECT_SWARM_MODE                = "com.docker.stack.namespace"
+	LABEL_PROJECT                           = "com.docker.compose.project"
+	LABEL_SERVICE                           = "com.docker.compose.service"
+	LABEL_SERVICE_SWARM_MODE                = "com.docker.swarm.service.name"
+	LABEL_K8S_POD_NAMESPACE                 = "io.kubernetes.pod.namespace"
+	LABEL_K8S_CONTAINER_NAME                = "io.kubernetes.container.name"
+	LABEL_POD                               = "io.kubernetes.pod.name"
+	SYMLINK_LOGS_BASE                       = "/acs/log/"
 
 	ERR_ALREADY_STARTED = "already started"
 )
@@ -180,6 +182,9 @@ type LogConfig struct {
 	Target       string
 	EstimateTime bool
 	Stdout       bool
+
+	CustomFields  map[string]string
+	CustomConfigs map[string]string
 }
 
 func (p *Pilot) cleanConfigs() error {
@@ -352,6 +357,13 @@ func (p *Pilot) newContainer(containerJSON *types.ContainerJSON) error {
 
 	for _, e := range env {
 		for _, prefix := range p.logPrefix {
+			customConfig := fmt.Sprintf(ENV_SERVICE_LOGS_CUSTOME_CONFIG_TEMPL, prefix)
+			if strings.HasPrefix(e, customConfig) {
+				labels[customConfig] = e[len(customConfig)+1:]
+				log.Infof("Get customConfig key = %s, value = %s", customConfig, labels[customConfig])
+				continue
+			}
+
 			serviceLogs := fmt.Sprintf(ENV_SERVICE_LOGS_TEMPL, prefix)
 			if !strings.HasPrefix(e, serviceLogs) {
 				continue
@@ -687,10 +699,25 @@ func (p *Pilot) getLogConfigs(jsonLogPath string, mounts []types.MountPoint, lab
 		labelNames = append(labelNames, k)
 	}
 
+	customConfigs := make(map[string]string)
+
 	sort.Strings(labelNames)
 	root := newLogInfoNode("")
 	for _, k := range labelNames {
 		for _, prefix := range p.logPrefix {
+			customConfig := fmt.Sprintf(ENV_SERVICE_LOGS_CUSTOME_CONFIG_TEMPL, prefix)
+			if customConfig == k {
+				configs := strings.Split(labels[k], "\n")
+				for _, c := range configs {
+					if c == "" {
+						continue
+					}
+					customLabel := strings.SplitN(c, "=", 2)
+					customConfigs[customLabel[0]] = customLabel[1]
+				}
+				continue
+			}
+
 			serviceLogs := fmt.Sprintf(LABEL_SERVICE_LOGS_TEMPL, prefix)
 			if !strings.HasPrefix(k, serviceLogs) || strings.Count(k, ".") == 1 {
 				continue
@@ -708,6 +735,7 @@ func (p *Pilot) getLogConfigs(jsonLogPath string, mounts []types.MountPoint, lab
 		if err != nil {
 			return nil, err
 		}
+		CustomConfig(name, customConfigs, logConfig)
 		ret = append(ret, logConfig)
 	}
 	return ret, nil
