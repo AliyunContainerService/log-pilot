@@ -12,9 +12,6 @@
   json.keys_under_root: true
   {{end}}
   fields:
-      {{range $key, $value := .CustomFields}}
-      {{ $key }}: {{ $value }}
-      {{end}}
       {{range $key, $value := .Tags}}
       {{ $key }}: {{ $value }}
       {{end}}

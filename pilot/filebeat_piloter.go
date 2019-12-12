@@ -3,9 +3,6 @@ package pilot
 import (
 	"encoding/json"
 	"fmt"
-	log "github.com/Sirupsen/logrus"
-	"github.com/elastic/go-ucfg"
-	"github.com/elastic/go-ucfg/yaml"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -13,6 +10,10 @@ import (
 	"regexp"
 	"strings"
 	"time"
+
+	log "github.com/Sirupsen/logrus"
+	"github.com/elastic/go-ucfg"
+	"github.com/elastic/go-ucfg/yaml"
 )
 
 // Global variables for FilebeatPiloter

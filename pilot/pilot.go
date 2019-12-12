@@ -34,18 +34,16 @@ const (
 	ENV_PILOT_CREATE_SYMLINK = "PILOT_CREATE_SYMLINK"
 	ENV_LOGGING_OUTPUT       = "LOGGING_OUTPUT"
 
-	ENV_SERVICE_LOGS_TEMPL                  = "%s_logs_"
-	ENV_SERVICE_LOGS_CUSTOME_CONFIG_TEMPL   = "%s_logs_custom_config"
-	LABEL_SERVICE_LOGS_TEMPL                = "%s.logs."
-	LABEL_SERVICE_LOGS_CUSTOME_CONFIG_TEMPL = "%s.logs.custom.config"
-	LABEL_PROJECT_SWARM_MODE                = "com.docker.stack.namespace"
-	LABEL_PROJECT                           = "com.docker.compose.project"
-	LABEL_SERVICE                           = "com.docker.compose.service"
-	LABEL_SERVICE_SWARM_MODE                = "com.docker.swarm.service.name"
-	LABEL_K8S_POD_NAMESPACE                 = "io.kubernetes.pod.namespace"
-	LABEL_K8S_CONTAINER_NAME                = "io.kubernetes.container.name"
-	LABEL_POD                               = "io.kubernetes.pod.name"
-	SYMLINK_LOGS_BASE                       = "/acs/log/"
+	ENV_SERVICE_LOGS_TEMPL   = "%s_logs_"
+	LABEL_SERVICE_LOGS_TEMPL = "%s.logs."
+	LABEL_PROJECT_SWARM_MODE = "com.docker.stack.namespace"
+	LABEL_PROJECT            = "com.docker.compose.project"
+	LABEL_SERVICE            = "com.docker.compose.service"
+	LABEL_SERVICE_SWARM_MODE = "com.docker.swarm.service.name"
+	LABEL_K8S_POD_NAMESPACE  = "io.kubernetes.pod.namespace"
+	LABEL_K8S_CONTAINER_NAME = "io.kubernetes.container.name"
+	LABEL_POD                = "io.kubernetes.pod.name"
+	SYMLINK_LOGS_BASE        = "/acs/log/"
 
 	ERR_ALREADY_STARTED = "already started"
 )
@@ -183,7 +181,6 @@ type LogConfig struct {
 	EstimateTime bool
 	Stdout       bool
 
-	CustomFields  map[string]string
 	CustomConfigs map[string]string
 }
 
@@ -357,13 +354,6 @@ func (p *Pilot) newContainer(containerJSON *types.ContainerJSON) error {
 
 	for _, e := range env {
 		for _, prefix := range p.logPrefix {
-			customConfig := fmt.Sprintf(ENV_SERVICE_LOGS_CUSTOME_CONFIG_TEMPL, prefix)
-			if strings.HasPrefix(e, customConfig) {
-				labels[customConfig] = e[len(customConfig)+1:]
-				log.Infof("Get customConfig key = %s, value = %s", customConfig, labels[customConfig])
-				continue
-			}
-
 			serviceLogs := fmt.Sprintf(ENV_SERVICE_LOGS_TEMPL, prefix)
 			if !strings.HasPrefix(e, serviceLogs) {
 				continue
@@ -496,13 +486,13 @@ func (p *Pilot) hostDirOf(path string, mounts map[string]types.MountPoint) strin
 	return ""
 }
 
-func (p *Pilot) parseTags(tags string) (map[string]string, error) {
-	tagMap := make(map[string]string)
-	if tags == "" {
-		return tagMap, nil
+func (p *Pilot) parseBlocks(blocks string) (map[string]string, error) {
+	blockMap := make(map[string]string)
+	if blocks == "" {
+		return blockMap, nil
 	}
 
-	kvArray := strings.Split(tags, ",")
+	kvArray := strings.Split(blocks, ",")
 	for _, kv := range kvArray {
 		arr := strings.Split(kv, "=")
 		if len(arr) != 2 {
@@ -513,9 +503,9 @@ func (p *Pilot) parseTags(tags string) (map[string]string, error) {
 		if key == "" || value == "" {
 			return nil, fmt.Errorf("%s is not a valid k=v format", kv)
 		}
-		tagMap[key] = value
+		blockMap[key] = value
 	}
-	return tagMap, nil
+	return blockMap, nil
 }
 
 func (p *Pilot) tryCheckKafkaTopic(topic string) error {
@@ -551,10 +541,18 @@ func (p *Pilot) parseLogConfig(name string, info *LogInfoNode, jsonLogPath strin
 	}
 
 	tags := info.get("tags")
-	tagMap, err := p.parseTags(tags)
+	tagMap, err := p.parseBlocks(tags)
 	if err != nil {
 		return nil, fmt.Errorf("parse tags for %s error: %v", name, err)
 	}
+
+	customConfigs := info.get("configs")
+	customConfigMap, err := p.parseBlocks(customConfigs)
+	if err != nil {
+		return nil, fmt.Errorf("parse custom configs for %s error: %v", name, err)
+	}
+
+	log.Infof("got custom configs %v", customConfigMap)
 
 	target := info.get("target")
 	// add default index or topic
@@ -602,15 +600,16 @@ func (p *Pilot) parseLogConfig(name string, info *LogInfoNode, jsonLogPath strin
 		}
 
 		return &LogConfig{
-			Name:         name,
-			HostDir:      filepath.Join(p.baseDir, filepath.Dir(jsonLogPath)),
-			File:         logFile,
-			Format:       format.value,
-			Tags:         tagMap,
-			FormatConfig: map[string]string{"time_format": "%Y-%m-%dT%H:%M:%S.%NZ"},
-			Target:       target,
-			EstimateTime: false,
-			Stdout:       true,
+			Name:          name,
+			HostDir:       filepath.Join(p.baseDir, filepath.Dir(jsonLogPath)),
+			File:          logFile,
+			Format:        format.value,
+			Tags:          tagMap,
+			CustomConfigs: customConfigMap,
+			FormatConfig:  map[string]string{"time_format": "%Y-%m-%dT%H:%M:%S.%NZ"},
+			Target:        target,
+			EstimateTime:  false,
+			Stdout:        true,
 		}, nil
 	}
 
@@ -630,14 +629,15 @@ func (p *Pilot) parseLogConfig(name string, info *LogInfoNode, jsonLogPath strin
 	}
 
 	cfg := &LogConfig{
-		Name:         name,
-		ContainerDir: containerDir,
-		Format:       format.value,
-		File:         file,
-		Tags:         tagMap,
-		HostDir:      filepath.Join(p.baseDir, hostDir),
-		FormatConfig: formatConfig,
-		Target:       target,
+		Name:          name,
+		ContainerDir:  containerDir,
+		Format:        format.value,
+		File:          file,
+		Tags:          tagMap,
+		CustomConfigs: customConfigMap,
+		HostDir:       filepath.Join(p.baseDir, hostDir),
+		FormatConfig:  formatConfig,
+		Target:        target,
 	}
 
 	if formatConfig["time_key"] == "" {
@@ -699,25 +699,10 @@ func (p *Pilot) getLogConfigs(jsonLogPath string, mounts []types.MountPoint, lab
 		labelNames = append(labelNames, k)
 	}
 
-	customConfigs := make(map[string]string)
-
 	sort.Strings(labelNames)
 	root := newLogInfoNode("")
 	for _, k := range labelNames {
 		for _, prefix := range p.logPrefix {
-			customConfig := fmt.Sprintf(ENV_SERVICE_LOGS_CUSTOME_CONFIG_TEMPL, prefix)
-			if customConfig == k {
-				configs := strings.Split(labels[k], "\n")
-				for _, c := range configs {
-					if c == "" {
-						continue
-					}
-					customLabel := strings.SplitN(c, "=", 2)
-					customConfigs[customLabel[0]] = customLabel[1]
-				}
-				continue
-			}
-
 			serviceLogs := fmt.Sprintf(LABEL_SERVICE_LOGS_TEMPL, prefix)
 			if !strings.HasPrefix(k, serviceLogs) || strings.Count(k, ".") == 1 {
 				continue
@@ -735,7 +720,6 @@ func (p *Pilot) getLogConfigs(jsonLogPath string, mounts []types.MountPoint, lab
 		if err != nil {
 			return nil, err
 		}
-		CustomConfig(name, customConfigs, logConfig)
 		ret = append(ret, logConfig)
 	}
 	return ret, nil

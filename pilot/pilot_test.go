@@ -1,11 +1,12 @@
 package pilot
 
 import (
+	"os"
+	"testing"
+
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/docker/api/types"
 	"gopkg.in/check.v1"
-	"os"
-	"testing"
 )
 
 func Test(t *testing.T) {
@@ -32,6 +33,7 @@ func (p *PilotSuite) TestGetLogConfigs(c *check.C) {
 		"aliyun.logs.hello":                    "/var/log/hello.log",
 		"aliyun.logs.hello.format":             "json",
 		"aliyun.logs.hello.tags":               "name=hello,stage=test",
+		"aliyun.logs.hello.configs":            "multiline.pattern='^\\[',multiline.negate=true,multiline.match=after",
 		"aliyun.logs.hello.format.time_format": "%Y-%m-%d",
 	}
 
@@ -52,6 +54,7 @@ func (p *PilotSuite) TestGetLogConfigs(c *check.C) {
 	c.Assert(configs[0].ContainerDir, check.Equals, "/var/log")
 	c.Assert(configs[0].File, check.Equals, "hello.log")
 	c.Assert(configs[0].Tags, check.HasLen, 4)
+	c.Assert(configs[0].CustomConfigs, check.HasLen, 3)
 	c.Assert(configs[0].FormatConfig, check.HasLen, 2)
 
 	//Test regex format
@@ -59,6 +62,7 @@ func (p *PilotSuite) TestGetLogConfigs(c *check.C) {
 		"aliyun.logs.hello":                "/var/log/hello.log",
 		"aliyun.logs.hello.format":         "regexp",
 		"aliyun.logs.hello.tags":           "name=hello,stage=test",
+		"aliyun.logs.hello.configs":        "multiline.pattern='^\\[',multiline.negate=true,multiline.match=after",
 		"aliyun.logs.hello.format.pattern": "(?=name:hello).*",
 	}
 	configs, err = pilot.getLogConfigs("/path/to/json.log", mounts, labels)
