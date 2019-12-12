@@ -152,7 +152,7 @@ output.kafka:
     ${KAFKA_BULK_MAX_SIZE:+bulk_max_size: ${KAFKA_BULK_MAX_SIZE}}
     ${KAFKA_BROKER_TIMEOUT:+broker_timeout: ${KAFKA_BROKER_TIMEOUT}}
     ${KAFKA_CHANNEL_BUFFER_SIZE:+channel_buffer_size: ${KAFKA_CHANNEL_BUFFER_SIZE}}
-    ${KAFKA_KEEP_ALIVE:+keep_alive ${KAFKA_KEEP_ALIVE}}
+    ${KAFKA_KEEP_ALIVE:+keep_alive: ${KAFKA_KEEP_ALIVE}}
     ${KAFKA_MAX_MESSAGE_BYTES:+max_message_bytes: ${KAFKA_MAX_MESSAGE_BYTES}}
     ${KAFKA_REQUIRE_ACKS:+required_acks: ${KAFKA_REQUIRE_ACKS}}
 EOF
