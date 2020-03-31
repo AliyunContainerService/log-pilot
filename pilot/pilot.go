@@ -9,6 +9,7 @@ import (
 	"path"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"text/template"
@@ -172,16 +173,18 @@ func (p *Pilot) watch() error {
 
 // LogConfig log configuration
 type LogConfig struct {
-	Name         string
-	HostDir      string
-	ContainerDir string
-	Format       string
-	FormatConfig map[string]string
-	File         string
-	Tags         map[string]string
-	Target       string
-	EstimateTime bool
-	Stdout       bool
+	Name             string
+	HostDir          string
+	ContainerDir     string
+	Format           string
+	FormatConfig     map[string]string
+	File             string
+	Tags             map[string]string
+	Target           string
+	EstimateTime     bool
+	Stdout           bool
+	MultilinePattern string
+	MultiLineMax     int
 
 	CustomFields  map[string]string
 	CustomConfigs map[string]string
@@ -556,6 +559,19 @@ func (p *Pilot) parseLogConfig(name string, info *LogInfoNode, jsonLogPath strin
 		return nil, fmt.Errorf("parse tags for %s error: %v", name, err)
 	}
 
+	var multilinePattern string
+	var multiLineMax int
+	if _multilinePattern := info.get("multilinepattern"); _multilinePattern != "" {
+		multilinePattern = _multilinePattern
+		_multiLineMax, err := strconv.Atoi(info.get("multilinemax"))
+		if err != nil {
+			return nil, fmt.Errorf("parse multilinemax for %s error: %v", info.get("multilinemax"), err)
+		} else if _multiLineMax <= 0 {
+			_multiLineMax = 100
+		}
+		multiLineMax = _multiLineMax
+	}
+
 	target := info.get("target")
 	// add default index or topic
 	if _, ok := tagMap["index"]; !ok {
@@ -602,15 +618,17 @@ func (p *Pilot) parseLogConfig(name string, info *LogInfoNode, jsonLogPath strin
 		}
 
 		return &LogConfig{
-			Name:         name,
-			HostDir:      filepath.Join(p.baseDir, filepath.Dir(jsonLogPath)),
-			File:         logFile,
-			Format:       format.value,
-			Tags:         tagMap,
-			FormatConfig: map[string]string{"time_format": "%Y-%m-%dT%H:%M:%S.%NZ"},
-			Target:       target,
-			EstimateTime: false,
-			Stdout:       true,
+			Name:             name,
+			HostDir:          filepath.Join(p.baseDir, filepath.Dir(jsonLogPath)),
+			File:             logFile,
+			Format:           format.value,
+			Tags:             tagMap,
+			FormatConfig:     map[string]string{"time_format": "%Y-%m-%dT%H:%M:%S.%NZ"},
+			Target:           target,
+			EstimateTime:     false,
+			Stdout:           true,
+			MultilinePattern: multilinePattern,
+			MultiLineMax:     multiLineMax,
 		}, nil
 	}
 
@@ -630,14 +648,16 @@ func (p *Pilot) parseLogConfig(name string, info *LogInfoNode, jsonLogPath strin
 	}
 
 	cfg := &LogConfig{
-		Name:         name,
-		ContainerDir: containerDir,
-		Format:       format.value,
-		File:         file,
-		Tags:         tagMap,
-		HostDir:      filepath.Join(p.baseDir, hostDir),
-		FormatConfig: formatConfig,
-		Target:       target,
+		Name:             name,
+		ContainerDir:     containerDir,
+		Format:           format.value,
+		File:             file,
+		Tags:             tagMap,
+		HostDir:          filepath.Join(p.baseDir, hostDir),
+		FormatConfig:     formatConfig,
+		Target:           target,
+		MultilinePattern: multilinePattern,
+		MultiLineMax:     multiLineMax,
 	}
 
 	if formatConfig["time_key"] == "" {
