@@ -9,9 +9,9 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
-	"time"
-	"syscall"
 	"sync"
+	"syscall"
+	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/elastic/go-ucfg"
@@ -44,7 +44,7 @@ type FilebeatPiloter struct {
 	fbExit         chan struct{}
 	noticeStop     chan bool
 	filebeat       *exec.Cmd
-	mlock          sync.Mutex 
+	mlock          sync.Mutex
 }
 
 // NewFilebeatPiloter returns a FilebeatPiloter instance
@@ -87,7 +87,6 @@ type RegistryState struct {
 	FileStateOS FileInode
 }
 
-
 func (p *FilebeatPiloter) watch() error {
 	log.Infof("%s watcher start", p.Name())
 	for {
@@ -98,9 +97,9 @@ func (p *FilebeatPiloter) watch() error {
 
 			//filebeat已经退出
 			if p.filebeat == nil {
-				return nil 
+				return nil
 			}
-			
+
 			err := p.filebeat.Process.Kill()
 			if err != nil {
 				pgroup := 0 - p.filebeat.Process.Pid
@@ -111,7 +110,7 @@ func (p *FilebeatPiloter) watch() error {
 			return err
 		case <-time.After(p.watchDuration):
 			log.Debugf("%s watcher scan", p.Name())
-			go func(){
+			go func() {
 				err := p.scan()
 				if err != nil {
 					log.Errorf("%s watcher scan error: %v", p.Name(), err)
@@ -138,14 +137,14 @@ func (p *FilebeatPiloter) scan() error {
 	configPaths := p.loadConfigPaths()
 	delConfs := make(map[string]string)
 	delLogs := make(map[string]string)
-	
+
 	p.mlock.Lock()
 	for container := range p.watchContainer {
 		confPath := p.GetConfPath(container)
 		if _, err := os.Stat(confPath); err != nil && os.IsNotExist(err) {
 			log.Infof("log config %s.yml has been removed and ignore", container)
 			delete(p.watchContainer, container)
-		} else if logm, b := p.canRemoveConf(container, states, configPaths); b{
+		} else if logm, b := p.canRemoveConf(container, states, configPaths); b {
 			// 在这里加入自定义的补充动作。
 			// 这里config文件的清理动作做一个调整：
 			//   不在循环中进行实际的文件删除动作，每次循环只记录要执行删除的container, 在循环结束后统一处理。
@@ -163,14 +162,13 @@ func (p *FilebeatPiloter) scan() error {
 	}
 
 	// 对filebeat进行container释放清理操作
-	p.Stop() //停止filebeat
-	<- p.fbExit  //等待filebeat退出
-	defer func(){
+	p.Stop()   //停止filebeat
+	<-p.fbExit //等待filebeat退出
+	defer func() {
 		time.Sleep(2 * time.Second)
 		p.Start()
 		time.Sleep(2 * time.Second)
 	}()
-	 
 
 	b, _ := ioutil.ReadFile(FILEBEAT_REGISTRY)
 	origStates := make([]RegistryState, 0)
@@ -182,12 +180,12 @@ func (p *FilebeatPiloter) scan() error {
 
 	failDelContainers := make(map[string]bool)
 	// 删除detroyed container的配置文件
-	for delConf, container := range delConfs{
+	for delConf, container := range delConfs {
 		log.Debug("start remove conf: ", delConf)
 		if err := os.Remove(delConf); err != nil {
 			log.Errorf("remove log config %s.yml fail: %v", container, err)
 			failDelContainers[container] = true
-		}else{
+		} else {
 			log.Infof("%s removed", delConf)
 			delete(p.watchContainer, container)
 		}
@@ -195,14 +193,14 @@ func (p *FilebeatPiloter) scan() error {
 
 	// 更新registry文件
 	for _, state := range origStates {
-		if !FileExist(state.Source){
+		if !FileExist(state.Source) {
 			//当前的文件已经被删除了，可能是未清理的过期配置
 			log.Debugf("logfile(%s) has been removed, the item could be deleted: %v", state.Source, state)
 			continue
-		}else if container, ok := delLogs[state.Source]; !ok {
+		} else if container, ok := delLogs[state.Source]; !ok {
 			//当前state不是destroying container的log，需要继续保留
 			newStates = append(newStates, state)
-		}else if _, ok := failDelContainers[container]; ok {
+		} else if _, ok := failDelContainers[container]; ok {
 			//当前state是destroying container的log，但是conf文件删除失败了，也需要继续保留
 			newStates = append(newStates, state)
 		}
@@ -222,7 +220,7 @@ func (p *FilebeatPiloter) canRemoveConf(container string, registry map[string]Re
 		log.Error(err)
 		return nil, false
 	}
-	
+
 	delLogs := make(map[string]string)
 	for _, path := range config.Paths {
 		autoMount := p.isAutoMountPath(filepath.Dir(path))
@@ -237,7 +235,7 @@ func (p *FilebeatPiloter) canRemoveConf(container string, registry map[string]Re
 				continue
 			}
 			if registry[logFile].Offset < info.Size() {
-				if autoMount { 
+				if autoMount {
 					log.Infof("%s->%s does not finish to read", container, logFile)
 					return nil, false
 				} else if _, ok := configPaths[path]; !ok { // host path bind
@@ -346,7 +344,7 @@ func (p *FilebeatPiloter) feed(containerID string) error {
 // Start starting and watching filebeat process
 func (p *FilebeatPiloter) Start() error {
 	log.Debug("Start the filebeat piloter")
-	if err := p.start(); err != nil{
+	if err := p.start(); err != nil {
 		return err
 	}
 
@@ -354,7 +352,7 @@ func (p *FilebeatPiloter) Start() error {
 		log.Infof("filebeat started: %v", p.filebeat.Process.Pid)
 		for {
 			select {
-			case err := <- Func2Chan(p.filebeat.Wait):
+			case err := <-Func2Chan(p.filebeat.Wait):
 				if err != nil {
 					log.Errorf("filebeat exited: %v", err)
 					if exitError, ok := err.(*exec.ExitError); ok {
@@ -362,14 +360,14 @@ func (p *FilebeatPiloter) Start() error {
 						log.Errorf("filebeat exited pid: %v", processState.Pid())
 					}
 				}
-		
+
 				// try to restart filebeat
 				log.Warningf("filebeat exited and try to restart")
 				if err := p.start(); err != nil {
 					//启动失败，重启piloter，通知watchDone
 					p.Stop()
 				}
-			case <- p.noticeStop:
+			case <-p.noticeStop:
 				return
 			}
 		}
@@ -384,9 +382,9 @@ func (p *FilebeatPiloter) start() error {
 	if p.filebeat != nil {
 		pid := p.filebeat.Process.Pid
 		process, err := os.FindProcess(pid)
-		if err == nil{
+		if err == nil {
 			err = process.Signal(syscall.Signal(0))
-			if err == nil{
+			if err == nil {
 				log.Infof("filebeat started, pid: %v", pid)
 				return err
 			}
