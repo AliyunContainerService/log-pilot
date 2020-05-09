@@ -1,6 +1,7 @@
 package pilot
 
 import (
+	"os"
 	"io/ioutil"
 	"strings"
 )
@@ -13,4 +14,24 @@ func ReadFile(path string, separator string) ([]string, error) {
 	}
 
 	return strings.Split(string(data), separator), nil
+}
+
+
+func Func2Chan(f func() error) <-chan error{
+	retChan := make(chan error)
+	go func(c chan error){
+		err := f()
+		c <- err 
+	}(retChan)
+
+	return retChan
+}
+
+func FileExist(path string) bool {
+	if _, err := os.Stat(path); err != nil {
+		if os.IsNotExist(err){
+			return false
+		}
+	}
+	return true
 }
