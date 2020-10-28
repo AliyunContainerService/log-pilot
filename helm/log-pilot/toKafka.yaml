@@ -1,0 +1,20 @@
+# env of log-pilot to kafka
+env:
+  - name: LOGGING_OUTPUT
+    value: kafka
+  - name: KAFKA_BROKERS
+    value: broker1:9092,broker2:9092,broker3:9092
+  #- name: KAFKA_DEFAULT_TOPIC
+  #  value: xxx
+  #- name: KAFKA_VERSION
+  #  value: xxx
+  #- name: KAFKA_USERNAME
+  #  value: user
+  #- name: KAFKA_PASSWORD
+  #  value: password
+  #- name: KAFKA_PARTITION_KEY
+  #  value: xxx
+  #- name: KAFKA_PARTITION
+  #  value: xxx
+  #- name: KAFKA_CLIENT_ID
+  #  value: xxx

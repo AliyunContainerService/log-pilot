@@ -1,0 +1,14 @@
+# env of log-pilot to elasticsearch
+env:
+  - name: LOGGING_OUTPUT
+    value: elasticsearch
+  - name: ELASTICSEARCH_HOSTS
+    value: es1:9200,es2:9200,es3:9200
+  #- name: ELASTICSEARCH_USER
+  #  value: user
+  #- name: ELASTICSEARCH_PASSWORD
+  #  value: passwd
+  #- name: ELASTICSEARCH_PATH
+  #  value: xxx
+  #- name: ELASTICSEARCH_SCHEME
+  #  value: xxx
