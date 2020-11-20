@@ -7,7 +7,7 @@ build()
 {
     echo -e "building image: log-pilot:latest\n"
 
-    docker build -t log-pilot:latest -f Dockerfile.$1 .
+    docker build -t log-pilot:latest -f Dockerfile.$1 . 
 }
 
 case $1 in
