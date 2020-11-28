@@ -10,7 +10,9 @@ RUN go install
 
 FROM alpine:3.6
 COPY assets/glibc/glibc-2.26-r0.apk /tmp/
-RUN apk update && \ 
+
+RUN sed -i "s/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g" /etc/apk/repositories && \
+    apk update && \ 
     apk add python && \
     apk add ruby-json ruby-irb && \
     apk add build-base ruby-dev && \
