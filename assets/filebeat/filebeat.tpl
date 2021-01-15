@@ -11,6 +11,12 @@
   {{if eq .Format "json"}}
   json.keys_under_root: true
   {{end}}
+  {{if .MultilinePattern}}
+  multiline.pattern: '{{ .MultilinePattern }}'
+  multiline.negate: true
+  multiline.match: after
+  multiline.max_lines: {{ .MultiLineMax }}
+  {{end}}
   fields:
       {{range $key, $value := .CustomFields}}
       {{ $key }}: {{ $value }}
