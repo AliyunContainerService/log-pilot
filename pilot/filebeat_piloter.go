@@ -266,8 +266,7 @@ func (p *FilebeatPiloter) Start() error {
 		// try to restart filebeat
 		log.Warningf("filebeat exited and try to restart")
 		filebeat = nil
-                // close watch 
-                p.watchDone <- true
+		p.watchDone <- true
 		p.Start()
 	}()
 
