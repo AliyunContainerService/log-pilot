@@ -705,7 +705,7 @@ func (p *Pilot) getLogConfigs(jsonLogPath string, mounts []types.MountPoint, lab
 	root := newLogInfoNode("")
 	for _, k := range labelNames {
 		for _, prefix := range p.logPrefix {
-			customConfig := fmt.Sprintf(ENV_SERVICE_LOGS_CUSTOME_CONFIG_TEMPL, prefix)
+			customConfig := fmt.Sprintf(LABEL_SERVICE_LOGS_CUSTOME_CONFIG_TEMPL, prefix)
 			if customConfig == k {
 				configs := strings.Split(labels[k], "\n")
 				for _, c := range configs {
