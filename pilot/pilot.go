@@ -48,6 +48,8 @@ const (
 	SYMLINK_LOGS_BASE                       = "/acs/log/"
 
 	ERR_ALREADY_STARTED = "already started"
+    // 自定义本地不可自动删除的监听yml文件前缀
+	CUSTOM_LOCAL_YML_PREFIX = "customlocal-"
 )
 
 // Pilot entry point
@@ -204,6 +206,9 @@ func (p *Pilot) cleanConfigs() error {
 	}
 
 	for _, name := range names {
+		if strings.HasPrefix(name, CUSTOM_LOCAL_YML_PREFIX){
+			continue
+		}
 		conf := filepath.Join(confDir, name)
 		stat, err := os.Stat(filepath.Join(confDir, name))
 		if err != nil {
@@ -600,7 +605,7 @@ func (p *Pilot) parseLogConfig(name string, info *LogInfoNode, jsonLogPath strin
 		if p.piloter.Name() == PILOT_FILEBEAT {
 			logFile = logFile + "*"
 		}
-
+		
 		return &LogConfig{
 			Name:         name,
 			HostDir:      filepath.Join(p.baseDir, filepath.Dir(jsonLogPath)),
@@ -705,9 +710,9 @@ func (p *Pilot) getLogConfigs(jsonLogPath string, mounts []types.MountPoint, lab
 	root := newLogInfoNode("")
 	for _, k := range labelNames {
 		for _, prefix := range p.logPrefix {
-			customConfig := fmt.Sprintf(ENV_SERVICE_LOGS_CUSTOME_CONFIG_TEMPL, prefix)
+			customConfig := fmt.Sprintf(LABEL_SERVICE_LOGS_CUSTOME_CONFIG_TEMPL, prefix)
 			if customConfig == k {
-				configs := strings.Split(labels[k], "\n")
+				configs := strings.Split(labels[k], `\n`)
 				for _, c := range configs {
 					if c == "" {
 						continue
