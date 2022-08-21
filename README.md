@@ -1,10 +1,10 @@
 log-pilot
 =========
 
-[![CircleCI](https://circleci.com/gh/AliyunContainerService/log-pilot.svg?style=svg)](https://circleci.com/gh/AliyunContainerService/log-pilot)
-[![Go Report Card](https://goreportcard.com/badge/github.com/AliyunContainerService/log-pilot)](https://goreportcard.com/report/github.com/AliyunContainerService/log-pilot)
 
-`log-pilot` is an awesome docker log tool. With `log-pilot` you can collect logs from docker hosts and send them to your centralized log system such as elasticsearch, graylog2, awsog and etc. `log-pilot` can collect not only docker stdout but also log file that inside docker containers.
+Containerd branch is mainly used to collect containerd logs
+=========
+`log-pilot-containerd` is an awesome  containerd  log tool. With `log-pilot` you can collect logs from docker hosts and send them to your centralized log system such as elasticsearch, graylog2, awsog and etc. `log-pilot` can collect not only containerd stdout but also log file that inside containerd containers.
 
 Try it
 ======
@@ -12,7 +12,7 @@ Try it
 Prerequisites:
 
 - docker-compose >= 1.6
-- Docker Engine >= 1.10
+- Container Engine 
 
 ```
 # download log-pilot project
