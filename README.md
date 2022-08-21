@@ -16,7 +16,7 @@ Prerequisites:
 
 ```
 # download log-pilot project
-git clone git@github.com:AliyunContainerService/log-pilot.git
+git clone -b containerd  git@github.com:kalesn/log-pilot.git
 # build log-pilot image
 cd log-pilot/ && ./build-image.sh
 # quick start
@@ -37,12 +37,15 @@ Quickstart
 ### Run pilot
 
 ```
-docker run --rm -it \
-    -v /var/run/docker.sock:/var/run/docker.sock \
-    -v /etc/localtime:/etc/localtime \
-    -v /:/host:ro \
-    --cap-add SYS_ADMIN \
-    registry.cn-hangzhou.aliyuncs.com/acs/log-pilot:0.9.5-filebeat
+docker run -d -it --rm \
+   --name log-pilot-filebeat \
+   -v /run/containerd/containerd.sock:/var/run/containerd/containerd.sock \
+   -v /etc/localtime:/etc/localtime \
+   -v /:/host:ro \
+   --cap-add SYS_ADMIN \
+   -e PILOT_LOG_PREFIX=aliyun \
+   --restart=always \
+   log-pilot-filebeat:containerd
 ```
 
 ### Run applications whose logs need to be collected
@@ -75,7 +78,7 @@ Build log-pilot
 
 Prerequisites:
 
-- Go >= 1.6
+- Go >= 1.11
 
 ```
 go get github.com/AliyunContainerService/log-pilot
