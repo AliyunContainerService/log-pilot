@@ -1,8 +1,8 @@
 package pilot
 
 import (
-	log "github.com/Sirupsen/logrus"
-	"github.com/docker/docker/api/types"
+	log "github.com/sirupsen/logrus"
+	"github.com/opencontainers/runtime-spec/specs-go"
 	"gopkg.in/check.v1"
 	"os"
 	"testing"
@@ -24,7 +24,7 @@ func (p *PilotSuite) TestGetLogConfigs(c *check.C) {
 	}
 
 	labels := map[string]string{}
-	configs, err := pilot.getLogConfigs("/path/to/json.log", []types.MountPoint{}, labels)
+	configs, err := pilot.getLogConfigs("/path/to/json.log", []specs.Mount{}, labels)
 	c.Assert(err, check.IsNil)
 	c.Assert(configs, check.HasLen, 0)
 
@@ -36,10 +36,10 @@ func (p *PilotSuite) TestGetLogConfigs(c *check.C) {
 	}
 
 	//no mount
-	configs, err = pilot.getLogConfigs("/path/to/json.log", []types.MountPoint{}, labels)
+	configs, err = pilot.getLogConfigs("/path/to/json.log", []specs.Mount{}, labels)
 	c.Assert(err, check.NotNil)
 
-	mounts := []types.MountPoint{
+	mounts := []specs.Mount{
 		{
 			Source:      "/host",
 			Destination: "/var/log",
