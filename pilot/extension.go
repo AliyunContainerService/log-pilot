@@ -1,7 +1,6 @@
 package pilot
 
 import (
-	"github.com/docker/docker/api/types"
 	"strings"
 )
 
